@@ -1,0 +1,1157 @@
+<title>Solunar Bite Forecast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an angler's almanac. Controls bar, then the day's sky (moon + solunar timeline), then species ranked as cards, then a 7-day grid. */
+:root{
+  --bg:#EAF0EE; --surface:#F7FAF9; --ink:#122427; --muted:#56696B; --line:#C8D5D2;
+  --accent:#0C6A70; --accent-soft:#D3E7E6; --brass:#A8731A;
+  --sky-night:#1C3640; --sky-twi:#5D7F88; --sky-day:#DCE8E6;
+  --excellent:#127A55; --good:#4F8F2F; --fair:#B8861C; --poor:#B04A3C;
+  --f-display:"Zilla Slab", Rockwell, "Roboto Slab", Georgia, serif;
+  --f-body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1618; --surface:#122124; --ink:#E2ECEA; --muted:#93A8A8; --line:#24393C;
+  --accent:#4DB6BA; --accent-soft:#183A3D; --brass:#E2B45C;
+  --sky-night:#081A20; --sky-twi:#2E525B; --sky-day:#3E5E64;
+  --excellent:#3DC48F; --good:#8CC45A; --fair:#E1B44A; --poor:#E07766;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0C1618; --surface:#122124; --ink:#E2ECEA; --muted:#93A8A8; --line:#24393C;
+  --accent:#4DB6BA; --accent-soft:#183A3D; --brass:#E2B45C;
+  --sky-night:#081A20; --sky-twi:#2E525B; --sky-day:#3E5E64;
+  --excellent:#3DC48F; --good:#8CC45A; --fair:#E1B44A; --poor:#E07766;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;padding-inline:16px;padding-block:20px 48px}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,4.5vw,40px)}
+h2{font-size:22px}
+h3{font-size:19px}
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+header.top p{margin:6px 0 0;max-width:60ch;color:var(--muted)}
+
+/* Controls */
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px 14px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:12px;font-weight:600;color:var(--muted)}
+.field.wide{grid-column:span 2}
+@media (max-width:520px){.field.wide{grid-column:1/-1}}
+input,select,button{font:inherit;color:var(--ink)}
+input,select{width:100%;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:6px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:6px 12px;cursor:pointer;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.hint{font-size:12px;color:var(--muted)}
+.nav{flex:none;width:36px;border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:pointer;font-size:18px;line-height:1}
+.nav:hover{border-color:var(--accent)}
+.linkbtn{align-self:flex-start;border:0;background:none;padding:0;color:var(--accent);font-size:12px;cursor:pointer;text-decoration:underline}
+.empty{padding:16px;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}
+.bestrow td{font-size:12px}
+.btn{flex:none;border:1px solid var(--accent);background:var(--accent);color:var(--surface);border-radius:6px;padding:0 14px;cursor:pointer;font-weight:600}
+.results{display:flex;flex-wrap:wrap;gap:6px}
+.results:empty{display:none}
+.results button{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:4px 10px;font-size:13px;cursor:pointer}
+.results button:hover{border-color:var(--accent)}
+.panel{display:flex;flex-direction:column;gap:14px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:10px;min-width:0}
+.go-head{display:flex;flex-wrap:wrap;gap:4px 22px;align-items:baseline}
+.go-head .big{font-family:var(--f-display);font-size:26px;font-weight:700}
+.chart-wrap{overflow-x:auto}
+.chart{position:relative;min-width:560px}
+.chart svg{display:block;width:100%;height:auto;touch-action:pan-y;cursor:crosshair}
+.chart svg:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tip{position:absolute;top:4px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;line-height:1.45;pointer-events:none;width:220px;box-shadow:0 6px 18px color-mix(in srgb,var(--ink) 14%,transparent)}
+.tip b{font-family:var(--f-mono);font-size:13px}
+.tip ul{margin:4px 0 0;padding-left:16px}
+.nodata{padding:14px;border:1px dashed var(--line);border-radius:8px;color:var(--muted);font-size:13.5px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.tile{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);min-width:0}
+.tile .v{font-family:var(--f-mono);font-size:18px;font-weight:500}
+.tile .k{font-size:12px;font-weight:600;color:var(--muted)}
+.tile .s{font-size:12px;color:var(--muted)}
+.card .seebtn{align-self:flex-start;border:1px solid var(--line);background:none;border-radius:6px;padding:4px 10px;font-size:12.5px;cursor:pointer;color:var(--accent);font-weight:600}
+
+
+/* Sky panel */
+.sky{display:grid;grid-template-columns:220px 1fr;gap:20px;align-items:start}
+@media (max-width:760px){.sky{grid-template-columns:1fr}}
+.moonbox{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.moonbox .phase{font-family:var(--f-display);font-size:20px;font-weight:700}
+.dayrating{display:flex;gap:4px;justify-content:center}
+.dayrating span{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--brass)}
+.dayrating span.on{background:var(--brass)}
+.timeline-card{min-width:0;display:flex;flex-direction:column;gap:12px}
+.tl-wrap{overflow-x:auto}
+.tl-wrap svg{display:block;width:100%;min-width:560px;height:auto}
+.times{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.times div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.times b{font-weight:600;font-size:12px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle}
+
+/* Species */
+.sec-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px}
+.species{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+@media (max-width:400px){.species{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card-head{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start}
+.card-head .latin{font-style:italic;font-size:13px;color:var(--muted)}
+.score{text-align:right}
+.score .num{font-family:var(--f-display);font-size:38px;font-weight:700;line-height:1}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:99px;border:1.5px solid currentColor}
+.r-excellent{color:var(--excellent)} .r-good{color:var(--good)} .r-fair{color:var(--fair)} .r-poor{color:var(--poor)}
+.strip{display:grid;grid-template-columns:repeat(48,1fr);gap:1px;height:22px;border-radius:4px;overflow:hidden;background:var(--line)}
+.strip span{display:block;background:var(--accent)}
+.strip-axis{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:10.5px;color:var(--muted);margin-top:3px}
+.windows{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13.5px}
+.windows .mono{font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:3px 8px;border-radius:5px;background:var(--accent-soft);color:var(--ink)}
+.chip.warn{background:transparent;border:1px dashed var(--line);color:var(--muted)}
+details summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--accent)}
+details ul{margin:8px 0 0;padding-left:18px;font-size:13.5px;display:flex;flex-direction:column;gap:4px}
+
+/* Week grid */
+.grid-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table.week{border-collapse:collapse;width:100%;min-width:620px;font-size:13.5px}
+table.week th,table.week td{padding:8px 10px;text-align:center;border-bottom:1px solid var(--line)}
+table.week th:first-child,table.week td:first-child{text-align:left;white-space:nowrap}
+table.week thead th{font-family:var(--f-mono);font-size:11.5px;font-weight:500;color:var(--muted)}
+table.week thead th button{background:none;border:0;cursor:pointer;color:inherit;font:inherit;padding:2px 4px;border-radius:4px}
+table.week thead th.sel button{color:var(--accent);font-weight:600;text-decoration:underline}
+table.week tbody tr:last-child td{border-bottom:0}
+.cell{display:inline-block;min-width:38px;padding:3px 0;border-radius:4px;font-family:var(--f-mono);font-weight:500;color:var(--ink)}
+.moonrow td{font-size:11.5px;color:var(--muted)}
+
+.method{font-size:14px;max-width:72ch;color:var(--ink)}
+.method p{margin:8px 0}
+.method summary{font-family:var(--f-display);font-size:18px;color:var(--ink)}
+.err{color:var(--poor);font-size:13px}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}.card:hover{border-color:var(--accent)}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Solunar tables × species habits</div>
+      <h1>Solunar Bite Forecast</h1>
+      <p>Pick a spot and a date. Each species gets a 0–100 bite rating from the moon and sun timing, its own feeding habits, the kind of spot you're fishing, the season, live water temperature, air pressure and swell. Only fish found at your spot are listed.</p>
+    </div>
+  </header>
+
+  <form class="controls" id="controls" autocomplete="off">
+    <div class="field wide">
+      <label for="preset">Fishing spot</label>
+      <select id="preset"></select>
+    </div>
+    <div class="field wide">
+      <label for="search">Find another spot</label>
+      <div class="row">
+        <input id="search" type="search" placeholder="Town, lake, river or beach">
+        <button type="submit" class="btn">Search</button>
+      </div>
+      <div class="results" id="results"></div>
+    </div>
+    <div class="field wide">
+      <label for="geo">Spot type</label>
+      <select id="geo"></select>
+    </div>
+    <div class="field wide">
+      <label for="date">Date</label>
+      <div class="row">
+        <button type="button" class="nav" id="prevDay" aria-label="Previous day">‹</button>
+        <input id="date" type="date">
+        <button type="button" class="nav" id="nextDay" aria-label="Next day">›</button>
+      </div>
+      <button type="button" class="linkbtn" id="todayBtn">Back to today</button>
+    </div>
+  </form>
+
+  <section aria-labelledby="goTitle" class="panel">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Hover or drag across the graph</div>
+        <h2 id="goTitle">When to go</h2>
+      </div>
+      <div class="field" style="width:min(260px,100%)">
+        <label for="focus">Species</label>
+        <select id="focus"></select>
+      </div>
+    </div>
+    <div class="go-head" id="goHead"></div>
+    <div class="chart-wrap" id="goChart"></div>
+  </section>
+
+  <section aria-labelledby="condTitle" class="panel">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow" id="condSrc"></div>
+        <h2 id="condTitle">Conditions at this spot</h2>
+      </div>
+      <div class="seg" id="unitSeg" role="group" aria-label="Temperature unit">
+        <button type="button" data-unit="C" aria-pressed="true">°C</button>
+        <button type="button" data-unit="F" aria-pressed="false">°F</button>
+      </div>
+    </div>
+    <div class="tiles" id="tiles"></div>
+    <div>
+      <h3 style="font-size:17px;margin-bottom:6px">Swell, 7 days from the picked date</h3>
+      <div class="chart-wrap" id="swellChart"></div>
+    </div>
+  </section>
+
+
+  <section class="sky" aria-labelledby="skyTitle">
+    <div class="moonbox">
+      <div class="eyebrow">Moon</div>
+      <svg id="moonSvg" width="120" height="120" viewBox="-60 -60 120 120" role="img" aria-label="Moon phase"></svg>
+      <div class="phase" id="phaseName"></div>
+      <div class="mono muted" id="phaseIllum"></div>
+      <div class="eyebrow" style="margin-top:6px">Solunar day rating</div>
+      <div class="dayrating" id="dayRating" aria-label=""></div>
+      <div class="hint" id="dayRatingText"></div>
+    </div>
+    <div class="timeline-card">
+      <div>
+        <div class="eyebrow" id="skyDate"></div>
+        <h2 id="skyTitle">Feeding periods</h2>
+      </div>
+      <div class="tl-wrap"><svg id="timeline" viewBox="0 0 760 170" role="img" aria-label="24 hour solunar timeline"></svg></div>
+      <div class="legend">
+        <span><i style="background:var(--brass)"></i>Major period (moon overhead or underfoot, about 2 h)</span>
+        <span><i style="background:var(--brass);opacity:.5"></i>Minor period (moonrise or moonset, about 1 h)</span>
+        <span><i style="background:var(--accent);height:2px"></i>Moon height</span>
+      </div>
+      <div class="times" id="times"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="wkTitle" style="display:flex;flex-direction:column;gap:14px">
+    <div>
+      <div class="eyebrow">From the picked date · tap a day to load it</div>
+      <h2 id="wkTitle">7-day forecast</h2>
+    </div>
+    <div class="grid-wrap"><table class="week" id="week"></table></div>
+  </section>
+
+  <section aria-labelledby="spTitle" style="display:flex;flex-direction:column;gap:14px">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Ranked for the selected day</div>
+        <h2 id="spTitle">Species outlook</h2>
+      </div>
+      <div class="seg" id="habSeg" role="group" aria-label="Type of water at this spot">
+        <button type="button" data-hab="all" aria-pressed="true">All</button>
+        <button type="button" data-hab="fresh" aria-pressed="false">Freshwater</button>
+        <button type="button" data-hab="salt" aria-pressed="false">Salt &amp; estuary</button>
+      </div>
+    </div>
+    <div class="species" id="species"></div>
+  </section>
+
+  <details class="method">
+    <summary>How the rating works</summary>
+    <p><b>Solunar periods.</b> John Alden Knight's solunar theory says fish and game feed hardest when the moon is directly overhead or directly underfoot (major periods, about two hours) and when it rises or sets (minor periods, about an hour). The page computes moon and sun positions for your coordinates and finds those moments.</p>
+    <p><b>Moon phase.</b> Periods count for more within a few days of a new or full moon, when the sun and moon pull together and tides run strongest. The day rating dots go up when that happens and when a period lands on sunrise or sunset.</p>
+    <p><b>Species habits.</b> Every species has its own activity curve for dawn, daytime, dusk and night, a weight for how much it responds to solunar periods, a response to moonlight at night, a seasonal curve (flipped automatically for the southern hemisphere), and a preferred water temperature range. A walleye's best hour and a pike's best hour on the same day can be far apart.</p>
+    <p><b>Geography.</b> Each species has a fit score for each kind of spot. Mulloway live on deep drops, river mouths and rock walls; bream on oyster racks and walls; tailor in the surf and off headlands; cod in deep snags. Fishing the right structure keeps the full rating, average structure trims it, and the wrong water (a cod in the surf) drops it near zero. Pick "Not sure" to rate on timing alone and see where each fish likes to be.</p>
+    <p><b>Where they live.</b> Each species carries its known range, native and introduced, including small or rare populations. Only species found at your coordinates are listed.</p>
+    <p><b>Live conditions.</b> Water temperature, air (barometric) pressure, its trend and the swell all come from the Open-Meteo forecast for the spot, hour by hour, up to about two weeks ahead. Sea temperature is the forecast surface temperature; lakes and rivers use the last 30 days of air temperature, which water follows closely. When live data isn't available (too far ahead, or the preview page), the rating falls back to a seasonal estimate and says so.</p>
+    <p><b>Swell.</b> Each saltwater species has a swell range it likes: tailor and mulloway want some whitewater, snapper a moderate sea, flathead and bream calm water. How much swell matters depends on the spot: a lot on a surf beach or rock wall, little up an estuary, not at all in fresh water. Big swell on exposed rocks is flagged as dangerous.</p>
+    <p><b>Air pressure.</b> Fish feel pressure changes through their swim bladder. A falling barometer before a front often triggers a feeding spell, steady pressure is normal, and the clear, rising high after a front usually slows the bite. Species that live shallow in fresh water (bass, pike, walleye) react most; saltwater fish follow the tide more than the barometer. The page reads the trend from the change over the previous three hours.</p>
+    <p><b>The number.</b> The rating blends the best two-hour stretch of the day with the overall quality of the top six hours, then scales by season, spot type and water temperature. Pressure and swell are applied hour by hour, so they move the best windows as well as the score. 75 and up is excellent, 55 good, 35 fair. It is a planning guide, not a promise; weather fronts, pressure, wind and tides (for salt water) also matter and aren't included yet.</p>
+  </details>
+</div>
+
+<script>
+/* ---------------- Astronomy (after V. Agafonkin's SunCalc, based on Meeus) ---------------- */
+const RAD = Math.PI / 180, DAY_MS = 86400000, J1970 = 2440588, J2000 = 2451545, OBL = RAD * 23.4397;
+const toDays = ms => ms / DAY_MS - 0.5 + J1970 - J2000;
+const rAsc = (l, b) => Math.atan2(Math.sin(l) * Math.cos(OBL) - Math.tan(b) * Math.sin(OBL), Math.cos(l));
+const decl = (l, b) => Math.asin(Math.sin(b) * Math.cos(OBL) + Math.cos(b) * Math.sin(OBL) * Math.sin(l));
+const sidereal = (d, lw) => RAD * (280.16 + 360.9856235 * d) - lw;
+
+function sunCoords(d) {
+  const M = RAD * (357.5291 + 0.98560028 * d);
+  const C = RAD * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M));
+  const L = M + C + RAD * 102.9372 + Math.PI;
+  return { ra: rAsc(L, 0), dec: decl(L, 0) };
+}
+function moonCoords(d) {
+  const L = RAD * (218.316 + 13.176396 * d), M = RAD * (134.963 + 13.064993 * d), F = RAD * (93.272 + 13.22935 * d);
+  const l = L + RAD * 6.289 * Math.sin(M), b = RAD * 5.128 * Math.sin(F);
+  return { ra: rAsc(l, b), dec: decl(l, b), dist: 385001 - 20905 * Math.cos(M) };
+}
+function bodyPos(ms, lat, lng, coordsFn) {
+  const d = toDays(ms), phi = RAD * lat, c = coordsFn(d);
+  let H = sidereal(d, RAD * -lng) - c.ra;
+  H = Math.atan2(Math.sin(H), Math.cos(H));
+  const alt = Math.asin(Math.sin(phi) * Math.sin(c.dec) + Math.cos(phi) * Math.cos(c.dec) * Math.cos(H));
+  return { alt: alt / RAD, H };
+}
+function moonIllum(ms) {
+  const d = toDays(ms), s = sunCoords(d), m = moonCoords(d), sd = 149598000;
+  const phi = Math.acos(Math.sin(s.dec) * Math.sin(m.dec) + Math.cos(s.dec) * Math.cos(m.dec) * Math.cos(s.ra - m.ra));
+  const inc = Math.atan2(sd * Math.sin(phi), m.dist - sd * Math.cos(phi));
+  const ang = Math.atan2(Math.cos(s.dec) * Math.sin(s.ra - m.ra), Math.sin(s.dec) * Math.cos(m.dec) - Math.cos(s.dec) * Math.sin(m.dec) * Math.cos(s.ra - m.ra));
+  return { fraction: (1 + Math.cos(inc)) / 2, phase: 0.5 + 0.5 * inc * (ang < 0 ? -1 : 1) / Math.PI };
+}
+
+/* Scan a window for moon rise/set/transits and sun rise/set. */
+function findEvents(t0, t1, lat, lng) {
+  const step = 6 * 60000, out = [];
+  let p = null;
+  const lerp = (a, b) => a / (a - b);
+  for (let t = t0; t <= t1; t += step) {
+    const m = bodyPos(t, lat, lng, moonCoords), s = bodyPos(t, lat, lng, sunCoords);
+    const c = { t, ma: m.alt - 0.125, H: m.H, sa: s.alt + 0.833 };
+    if (p) {
+      if (p.ma < 0 && c.ma >= 0) out.push({ body: 'moon', type: 'rise', t: p.t + step * lerp(p.ma, c.ma) });
+      if (p.ma >= 0 && c.ma < 0) out.push({ body: 'moon', type: 'set', t: p.t + step * lerp(p.ma, c.ma) });
+      if (p.H < 0 && c.H >= 0 && c.H - p.H < Math.PI) out.push({ body: 'moon', type: 'upper', t: p.t + step * lerp(p.H, c.H) });
+      if (p.H > 0 && c.H < 0 && p.H - c.H > Math.PI) {
+        const a = p.H - Math.PI, b = c.H + 2 * Math.PI - Math.PI;
+        out.push({ body: 'moon', type: 'lower', t: p.t + step * lerp(a, b) });
+      }
+      if (p.sa < 0 && c.sa >= 0) out.push({ body: 'sun', type: 'rise', t: p.t + step * lerp(p.sa, c.sa) });
+      if (p.sa >= 0 && c.sa < 0) out.push({ body: 'sun', type: 'set', t: p.t + step * lerp(p.sa, c.sa) });
+    }
+    p = c;
+  }
+  return out;
+}
+
+/* ---------------- Time zone helpers ---------------- */
+const dtfCache = {};
+function tzParts(ms, tz) {
+  const f = dtfCache[tz] || (dtfCache[tz] = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+  const o = {};
+  for (const p of f.formatToParts(new Date(ms))) o[p.type] = p.value;
+  return { y: +o.year, mo: +o.month, d: +o.day, h: +o.hour % 24, mi: +o.minute, s: +o.second };
+}
+function tzOffset(ms, tz) {
+  const p = tzParts(ms, tz);
+  return Date.UTC(p.y, p.mo - 1, p.d, p.h, p.mi, p.s) - Math.floor(ms / 1000) * 1000;
+}
+function zonedMidnight(dateStr, tz) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const guess = Date.UTC(y, m - 1, d);
+  let t = guess - tzOffset(guess, tz);
+  t = guess - tzOffset(t, tz);
+  return t;
+}
+function addDays(dateStr, n) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+const fmtTime = (ms, tz) => { const p = tzParts(ms, tz); return String(p.h).padStart(2, '0') + ':' + String(p.mi).padStart(2, '0'); };
+
+/* ---------------- Solunar day ---------------- */
+const gauss = (x, s) => Math.exp(-0.5 * (x / s) ** 2);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+
+function phaseInfo(phase) {
+  const names = [[0.0339, 'New moon'], [0.216, 'Waxing crescent'], [0.284, 'First quarter'], [0.466, 'Waxing gibbous'], [0.534, 'Full moon'], [0.716, 'Waning gibbous'], [0.784, 'Last quarter'], [0.966, 'Waning crescent'], [1.01, 'New moon']];
+  return names.find(n => phase < n[0])[1];
+}
+
+function computeDay(dateStr, loc) {
+  const { lat, lng, tz } = loc;
+  const start = zonedMidnight(dateStr, tz), end = zonedMidnight(addDays(dateStr, 1), tz);
+  const ev = findEvents(start - 14 * 3600e3, end + 14 * 3600e3, lat, lng);
+  const il = moonIllum((start + end) / 2);
+  // 1 at new or full, 0 at quarters
+  const moonStrength = Math.abs(Math.cos(2 * Math.PI * il.phase));
+  const majors = ev.filter(e => e.body === 'moon' && (e.type === 'upper' || e.type === 'lower'));
+  const minors = ev.filter(e => e.body === 'moon' && (e.type === 'rise' || e.type === 'set'));
+  const sunEv = ev.filter(e => e.body === 'sun');
+  const inDay = e => e.t >= start && e.t < end;
+
+  const STEP = 10 * 60000, samples = [];
+  for (let t = start; t < end; t += STEP) {
+    const sa = bodyPos(t, lat, lng, sunCoords).alt, ma = bodyPos(t, lat, lng, moonCoords).alt;
+    let sol = 0;
+    for (const e of majors) sol = Math.max(sol, gauss((t - e.t) / 60000, 42));
+    for (const e of minors) sol = Math.max(sol, 0.62 * gauss((t - e.t) / 60000, 22));
+    let twi = 0, twiKind = null;
+    for (const e of sunEv) {
+      const g = gauss((t - e.t) / 60000, 55);
+      if (g > twi) { twi = g; twiKind = e.type; }
+    }
+    samples.push({ t, sa, ma, sol, twi, twiKind });
+  }
+
+  // Classic 0-4 day rating: moon phase plus periods that land on sunrise/sunset
+  let overlap = 0;
+  for (const s of sunEv.filter(inDay)) {
+    if ([...majors, ...minors].some(e => Math.abs(e.t - s.t) < 75 * 60000)) overlap++;
+  }
+  const dayStars = clamp(Math.round(1 + moonStrength * 2 + Math.min(overlap, 2) * 0.6), 1, 4);
+
+  return {
+    dateStr, start, end, lat, lng, tz, illum: il, moonStrength, samples, dayStars, overlap,
+    majors: majors.filter(inDay), minors: minors.filter(inDay),
+    moonRise: minors.filter(e => e.type === 'rise' && inDay(e)), moonSet: minors.filter(e => e.type === 'set' && inDay(e)),
+    sunRise: sunEv.filter(e => e.type === 'rise' && inDay(e)), sunSet: sunEv.filter(e => e.type === 'set' && inDay(e)),
+    allMajors: majors, allMinors: minors
+  };
+}
+
+/* ---------------- Geography ---------------- */
+const GEO = [
+  ['any', 'Not sure / a bit of everything'],
+  ['drop', 'Deep drop-off or hole'],
+  ['reef', 'Reef or rocky bottom'],
+  ['rockwall', 'Rock wall, breakwall or headland'],
+  ['mouth', 'River mouth or estuary entrance'],
+  ['flats', 'Shallow sand or mud flats'],
+  ['weed', 'Weed beds or grassy shallows'],
+  ['snags', 'Snags, timber or brush piles'],
+  ['jetty', 'Jetty, docks or oyster racks'],
+  ['surf', 'Surf beach'],
+  ['openlake', 'Open lake or dam basin'],
+  ['stream', 'Flowing river or creek']
+];
+const GEO_NAME = Object.fromEntries(GEO);
+const SALT_ONLY = ['surf'], FRESH_ONLY = ['openlake'];
+function geoFit(sp, geo) {
+  if (!geo || geo === 'any') return null;
+  let v = sp.geo[geo];
+  if (v == null) v = (sp.hab === 'fresh' && SALT_ONLY.includes(geo)) || (sp.hab === 'salt' && FRESH_ONLY.includes(geo)) ? 0 : 0.3;
+  const f = v === 0 ? 0.15 : 0.5 + 0.5 * v;
+  const note = v >= 0.9 ? 'prime structure' : v >= 0.65 ? 'good structure' : v >= 0.4 ? 'so-so structure' : v > 0 ? 'poor structure' : 'wrong water';
+  return { v, f, note };
+}
+const bestGeo = sp => Object.entries(sp.geo).filter(([, v]) => v >= 0.9).map(([k]) => GEO_NAME[k].split(' or ')[0].split(',')[0].toLowerCase());
+
+/* ---------------- Range, water temperature, pressure ---------------- */
+// range: boxes [latMin, latMax, lngMin, lngMax], native and introduced
+const inRange = (sp, lat, lng) => sp.range.some(([a, b, c, d]) => lat >= a && lat <= b && lng >= c && lng <= d);
+
+function dayOfYear(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return (Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 1)) / DAY_MS + 1;
+}
+// Seasonal estimate of surface water temperature (°C) from latitude and date
+function estWaterTemp(lat, dateStr, kind) {
+  const a = Math.abs(lat), c2 = Math.cos(lat * RAD) ** 2;
+  const peak = lat >= 0 ? 215 : 32;
+  const cyc = Math.cos(2 * Math.PI * (dayOfYear(dateStr) - peak) / 365.25);
+  if (kind === 'sea') return Math.max(-1, 29.5 * c2 - 0.3 + Math.min(0.5 + 0.12 * a, 8) * cyc);
+  return Math.max(1, 29 * c2 - 2.5 + Math.min(1 + 0.22 * a, 13) * cyc);
+}
+// press: { hpa, trend } ; baro = species sensitivity 0-1
+function pressureFactor(sp, press) {
+  if (!press || (!press.trend && press.hpa == null)) return null;
+  const t = { fall: 0.12, steady: 0, rise: -0.08, post: -0.22 }[press.trend] || 0;
+  let lvl = 0;
+  if (press.hpa != null) lvl = press.hpa > 1022 ? -0.06 : press.hpa < 1005 ? 0.03 : 0;
+  const f = 1 + sp.baro * (t + lvl);
+  const note = f >= 1.03 ? 'feeding trigger' : f <= 0.85 ? 'tough, fish go quiet' : f < 0.97 ? 'slowing the bite' : 'neutral';
+  return { f, note };
+}
+
+// How exposed each kind of spot is to ocean swell (0 = sheltered)
+const EXPOSURE = { surf: 1, rockwall: 1, reef: 0.8, any: 0.5, mouth: 0.5, drop: 0.3, jetty: 0.3, flats: 0.2, weed: 0.2, snags: 0.1, openlake: 0, stream: 0 };
+// sw: { h } swell height in metres ; sp.swell = [ideal low, ideal high]
+function swellFactor(sp, sw, geo) {
+  if (!sw || sp.hab !== 'salt' || !sp.swell) return null;
+  const exp = EXPOSURE[geo || 'any'] ?? 0.5;
+  if (!exp) return null;
+  const [lo, hi] = sp.swell, h = sw.h;
+  const d = h < lo ? -0.12 * (lo - h) / Math.max(lo, 0.3) : h > hi ? -0.35 * Math.min(1, (h - hi) / 1.5) : 0.06;
+  const note = h > 3 && exp >= 0.8 ? 'dangerous on exposed rocks' : d > 0 ? 'ideal' : d < -0.15 ? 'too rough' : h < lo ? 'too flat' : 'a bit big';
+  return { f: 1 + exp * d, note, h };
+}
+
+/* ---------------- Species profiles ---------------- */
+// tod: activity weight at dawn / day / dusk / night (0-1)
+// sol: how strongly the species keys on solunar periods (0-1)
+// moonlight: response to a bright moon at night (-1 hurts, +1 helps)
+// season: spring / summer / autumn / winter factor (hemisphere-adjusted)
+// temp: [tolerable low, ideal low, ideal high, tolerable high] in °C
+const SPECIES = [
+  { id: 'lmb', name: 'Largemouth bass', latin: 'Micropterus salmoides', hab: 'fresh',
+    range: [[25, 50, -125, -66], [14, 32, -118, -86], [18, 23, -160, -154], [-35, -15, 10, 40], [30, 42, 128, 146], [35, 46, -10, 16], [-35, -20, -66, -44]], baro: 0.9,
+    geo: { weed: 1, snags: 1, jetty: 0.9, drop: 0.7, openlake: 0.5, stream: 0.5, flats: 0.4, mouth: 0.3, reef: 0.5, rockwall: 0.5 },
+    tod: [0.95, 0.45, 1, 0.35], sol: 0.9, moonlight: 0.15,
+    season: { spring: 1, summer: 0.8, autumn: 0.9, winter: 0.4 }, temp: [10, 18, 27, 32],
+    seasonNote: { spring: 'Pre-spawn and spawn, bass are shallow and aggressive', summer: 'Shallow at low light, deep structure midday', autumn: 'Fattening up and chasing bait', winter: 'Slow and deep' },
+    tips: ['Topwater and frogs along weed edges in the low-light windows', 'Midday, slow a soft plastic or jig down to deeper cover', 'A major period on a cloudy afternoon can fire a midday bite'] },
+  { id: 'trout', name: 'Rainbow trout', latin: 'Oncorhynchus mykiss', hab: 'fresh',
+    range: [[30, 62, -170, -60], [-55, -20, -76, -55], [35, 70, -10, 45], [-44, -28, 138, 154], [-35, -31, 114, 119], [-47, -34, 166, 179], [-35, -22, 17, 32], [30, 45, 128, 146], [27, 37, 70, 92], [-2, 1, 34, 38]], baro: 0.6,
+    geo: { stream: 1, mouth: 0.8, openlake: 0.7, drop: 0.7, weed: 0.5, snags: 0.5, reef: 0.5, flats: 0.3, jetty: 0.3, rockwall: 0.4 },
+    tod: [1, 0.5, 0.9, 0.2], sol: 0.7, moonlight: -0.1,
+    season: { spring: 1, summer: 0.55, autumn: 0.95, winter: 0.6 }, temp: [4, 10, 16, 21],
+    seasonNote: { spring: 'Hatches start and fish feed hard', summer: 'Heat pushes fish deep or to cold inflows', autumn: 'Feeding before winter, strong bite', winter: 'Slow, fish the warmest part of the day' },
+    tips: ['Watch for hatches in the first and last light', 'In warm weather fish cold inflows, springs and depth', 'Above 21 °C trout are stressed; consider catch-and-release care or another target'] },
+  { id: 'walleye', name: 'Walleye', latin: 'Sander vitreus', hab: 'fresh',
+    range: [[30, 66, -125, -64]], baro: 0.9,
+    geo: { reef: 1, drop: 0.9, mouth: 0.8, stream: 0.7, openlake: 0.6, weed: 0.6, flats: 0.5, snags: 0.4, jetty: 0.4, rockwall: 0.6 },
+    tod: [0.85, 0.25, 1, 0.85], sol: 0.8, moonlight: 0.35,
+    season: { spring: 0.9, summer: 0.7, autumn: 1, winter: 0.6 }, temp: [4, 15, 22, 27],
+    seasonNote: { spring: 'Post-spawn fish on shallow flats and river mouths', summer: 'Deep by day, up on reefs at night', autumn: 'Best season of the year for big fish', winter: 'Ice bite at dawn and dusk' },
+    tips: ['Their eyes favour low light; dusk into dark is prime', 'Bright moonlit nights extend the bite on shallow reefs', 'On sunny days, fish deeper edges or wait for wind chop'] },
+  { id: 'cat', name: 'Channel catfish', latin: 'Ictalurus punctatus', hab: 'fresh',
+    range: [[15, 52, -125, -65], [36, 46, 6, 19], [20, 42, 100, 125]], baro: 0.5,
+    geo: { drop: 1, stream: 0.9, snags: 0.9, mouth: 0.6, openlake: 0.5, jetty: 0.5, weed: 0.3, flats: 0.3, reef: 0.3, rockwall: 0.4 },
+    tod: [0.6, 0.35, 0.9, 1], sol: 0.6, moonlight: -0.25,
+    season: { spring: 0.8, summer: 1, autumn: 0.75, winter: 0.35 }, temp: [10, 21, 29, 33],
+    seasonNote: { spring: 'Moving up rivers as water warms', summer: 'Peak season, night bite is strongest', autumn: 'Feeding heavily before cooling', winter: 'Sluggish in deep holes' },
+    tips: ['Night fishing beats day; darker moonless nights are often better', 'Cut bait or stink bait on the bottom near holes and current seams', 'A rise after rain brings them out to feed'] },
+  { id: 'crappie', name: 'Crappie', latin: 'Pomoxis spp.', hab: 'fresh',
+    range: [[25, 52, -125, -66]], baro: 0.8,
+    geo: { snags: 1, jetty: 1, weed: 0.7, drop: 0.7, openlake: 0.4, stream: 0.4, mouth: 0.4, flats: 0.3, reef: 0.3, rockwall: 0.3 },
+    tod: [0.9, 0.5, 1, 0.6], sol: 0.75, moonlight: 0.2,
+    season: { spring: 1, summer: 0.6, autumn: 0.8, winter: 0.55 }, temp: [7, 15, 24, 29],
+    seasonNote: { spring: 'Spawn brings them shallow in big schools', summer: 'Suspended over deep brush', autumn: 'Following baitfish back to the shallows', winter: 'Tight schools in deep water' },
+    tips: ['Small jigs and minnows around brush piles and docks', 'Fish under lights at night in summer', 'Find one and you have found the school'] },
+  { id: 'pike', name: 'Northern pike', latin: 'Esox lucius', hab: 'fresh',
+    range: [[38, 72, -170, -60], [36, 72, -10, 180]], baro: 0.85,
+    geo: { weed: 1, mouth: 0.7, snags: 0.7, flats: 0.6, drop: 0.6, stream: 0.6, openlake: 0.5, jetty: 0.4, reef: 0.4, rockwall: 0.3 },
+    tod: [0.85, 0.6, 0.8, 0.1], sol: 0.6, moonlight: 0,
+    season: { spring: 1, summer: 0.55, autumn: 1, winter: 0.7 }, temp: [2, 10, 19, 25],
+    seasonNote: { spring: 'Post-spawn pike are hungry in shallow bays', summer: 'Big fish go deep and cool', autumn: 'Big fish feed hard and come shallow', winter: 'Good ice-fishing target' },
+    tips: ['A sight hunter, so daylight is fine and midday can be good', 'Spinnerbaits, spoons and jerkbaits along weed lines', 'Use a wire or heavy fluoro leader'] },
+  { id: 'carp', name: 'Common carp', latin: 'Cyprinus carpio', hab: 'fresh',
+    range: [[-46, 62, -180, 180]], baro: 0.5,
+    geo: { flats: 0.9, weed: 0.9, stream: 0.7, openlake: 0.6, mouth: 0.6, snags: 0.6, jetty: 0.5, drop: 0.4, reef: 0.2, rockwall: 0.3 },
+    tod: [0.9, 0.6, 0.8, 0.7], sol: 0.5, moonlight: 0,
+    season: { spring: 0.9, summer: 0.9, autumn: 0.75, winter: 0.3 }, temp: [8, 18, 28, 32],
+    seasonNote: { spring: 'Warming shallows draw them in', summer: 'Feeding most of the day and night', autumn: 'Feeding up before the cold', winter: 'Very slow' },
+    tips: ['Pre-bait a spot with corn or pellets', 'Look for bubbles and clouded water where they root', 'Light line and a patient, still presentation'] },
+  { id: 'barra', name: 'Barramundi', latin: 'Lates calcarifer', hab: 'salt',
+    range: [[-27, 25, 68, 155]], baro: 0.4,
+    swell: [0, 1], geo: { snags: 1, mouth: 1, rockwall: 0.8, drop: 0.7, stream: 0.7, jetty: 0.6, flats: 0.5, weed: 0.4, reef: 0.4, surf: 0.3 },
+    tod: [0.9, 0.4, 1, 0.8], sol: 0.9, moonlight: 0.1,
+    season: { spring: 0.85, summer: 1, autumn: 0.85, winter: 0.35 }, temp: [20, 26, 32, 35],
+    seasonNote: { spring: 'Build-up season, fish start firing', summer: 'Wet season run-off, peak action', autumn: 'Run-off season, creek mouths fire', winter: 'Cool water shuts them down' },
+    tips: ['Fish creek mouths and drains on the run-out tide', 'Big tides around new and full moon line up with the best barra days', 'Hard-bodied lures and soft vibes worked slow along snags'] },
+  { id: 'snapper', name: 'Snapper', latin: 'Chrysophrys auratus', hab: 'salt',
+    range: [[-44, -20, 112, 154], [-48, -34, 165, 179]], baro: 0.3,
+    swell: [0.5, 1.5], geo: { reef: 1, rockwall: 0.8, drop: 0.8, mouth: 0.6, jetty: 0.5, weed: 0.4, flats: 0.3, surf: 0.3, snags: 0.3, stream: 0 },
+    tod: [1, 0.5, 0.95, 0.6], sol: 0.9, moonlight: 0.1,
+    season: { spring: 0.9, summer: 0.8, autumn: 0.9, winter: 0.7 }, temp: [12, 16, 22, 26],
+    seasonNote: { spring: 'Spawning aggregations move inshore', summer: 'Inshore reefs and bays', autumn: 'Good inshore bite', winter: 'Big fish on deeper reefs' },
+    tips: ['Change of tide plus a solunar period is the classic snapper window', 'Berley (chum) to bring fish up', 'Soft plastics or lightly weighted baits drifting back'] },
+  { id: 'red', name: 'Red drum (redfish)', latin: 'Sciaenops ocellatus', hab: 'salt',
+    range: [[24, 41, -100, -70], [18, 30, -98, -86]], baro: 0.4,
+    swell: [0, 0.8], geo: { flats: 1, mouth: 0.9, weed: 0.8, jetty: 0.7, rockwall: 0.7, surf: 0.7, drop: 0.5, reef: 0.5, snags: 0.4, stream: 0.2 },
+    tod: [0.9, 0.65, 0.85, 0.5], sol: 0.8, moonlight: 0.1,
+    season: { spring: 0.85, summer: 0.75, autumn: 1, winter: 0.6 }, temp: [10, 20, 28, 32],
+    seasonNote: { spring: 'Moving onto the flats', summer: 'Early and late on shallow flats', autumn: 'Bull red run at the passes', winter: 'Schooling in deeper, warmer water' },
+    tips: ['Sight fish tailing reds on the flats at low light', 'Moving tide over oyster bars and grass edges', 'Gold spoons, shrimp or cut mullet'] },
+  { id: 'flat', name: 'Dusky flathead', latin: 'Platycephalus fuscus', hab: 'salt',
+    range: [[-39, -16, 138, 154]], baro: 0.35,
+    swell: [0, 1], geo: { flats: 1, drop: 0.9, mouth: 0.9, weed: 0.7, surf: 0.6, jetty: 0.5, rockwall: 0.5, snags: 0.4, reef: 0.3, stream: 0.2 },
+    tod: [0.7, 0.7, 0.8, 0.4], sol: 0.7, moonlight: 0,
+    season: { spring: 0.9, summer: 1, autumn: 0.8, winter: 0.35 }, temp: [13, 18, 26, 30],
+    seasonNote: { spring: 'Big females move to the estuary mouths', summer: 'Peak season on the sand flats', autumn: 'Still active before the cool', winter: 'Slow and deeper' },
+    tips: ['An ambush feeder: work lures along drop-offs on a falling tide', 'Hop soft plastics slowly along the bottom', 'Daytime is fine; the tide matters more than the light'] },
+  { id: 'mullo', name: 'Mulloway (jewfish)', latin: 'Argyrosomus japonicus', hab: 'salt',
+    range: [[-40, -22, 112, 154], [-35, -24, 15, 35], [25, 40, 118, 142]], baro: 0.35,
+    swell: [0.8, 2], geo: { drop: 1, mouth: 1, rockwall: 0.9, surf: 0.8, jetty: 0.7, reef: 0.6, snags: 0.6, stream: 0.5, flats: 0.3, weed: 0.3 },
+    tod: [0.85, 0.3, 1, 0.95], sol: 0.95, moonlight: 0,
+    season: { spring: 0.8, summer: 0.9, autumn: 1, winter: 0.75 }, temp: [12, 16, 24, 28],
+    seasonNote: { spring: 'Moving up into the estuaries', summer: 'Prawn runs and fresh water push them into river mouths', autumn: 'Prime time on beaches, river mouths and rock walls', winter: 'Big fish holding on deep holes and walls' },
+    tips: ['Fish the deep drops and holes on the change of tide, especially the top of the tide after dark', 'Live or fresh squid, mullet or yakka on the bottom, or soft plastics hopped down the face of the drop', 'Big tides around new and full moon bring the best mulloway sessions'] },
+  { id: 'bream', name: 'Yellowfin bream', latin: 'Acanthopagrus australis', hab: 'salt',
+    range: [[-39, -19, 145, 154]], baro: 0.35,
+    swell: [0, 1.2], geo: { rockwall: 1, jetty: 1, snags: 0.8, flats: 0.8, weed: 0.8, mouth: 0.8, drop: 0.5, reef: 0.5, surf: 0.5, stream: 0.4 },
+    tod: [0.9, 0.6, 0.9, 0.7], sol: 0.7, moonlight: 0.1,
+    season: { spring: 0.85, summer: 0.9, autumn: 0.85, winter: 0.9 }, temp: [13, 17, 26, 30],
+    seasonNote: { spring: 'Spread through the estuary after spawning', summer: 'Up on the flats and around structure', autumn: 'Feeding hard and schooling up', winter: 'Schooling at river mouths and walls to spawn' },
+    tips: ['Cast small lures tight to oyster racks, pontoons and rock walls', 'Light fluorocarbon leader; they are line-shy in clear water', 'Peeled prawn or nippers drifted with little or no weight'] },
+  { id: 'tailor', name: 'Tailor', latin: 'Pomatomus saltatrix', hab: 'salt',
+    range: [[-39, -23, 148, 154], [-35, -24, 112, 119], [-38, -32, 134, 142], [24, 45, -82, -65], [30, 46, -6, 42], [-35, 15, -20, 35], [-40, -20, -60, -38]], baro: 0.3,
+    swell: [1, 2.2], geo: { surf: 1, rockwall: 1, mouth: 0.9, reef: 0.6, jetty: 0.6, drop: 0.5, flats: 0.3, weed: 0.3, stream: 0 },
+    tod: [1, 0.35, 1, 0.5], sol: 0.7, moonlight: 0.1,
+    season: { spring: 0.8, summer: 0.7, autumn: 0.95, winter: 1 }, temp: [14, 18, 24, 27],
+    seasonNote: { spring: 'Run tapering off, fish spread out', summer: 'Smaller fish in estuaries and surf', autumn: 'Schools building along the coast', winter: 'Tailor run on east coast beaches and headlands' },
+    tips: ['Dawn and dusk in the white water off headlands and beach gutters', 'Metal slugs cranked fast, or ganged-hook pilchards', 'They have sharp teeth; use ganged hooks or a heavier leader'] },
+  { id: 'cod', name: 'Murray cod', latin: 'Maccullochella peelii', hab: 'fresh',
+    range: [[-38, -25, 138, 150.5], [-30, -25, 150.5, 152.2]], baro: 0.7,
+    geo: { snags: 1, drop: 0.9, stream: 0.9, rockwall: 0.5, openlake: 0.5, weed: 0.3, flats: 0.2, mouth: 0.5, jetty: 0.4, reef: 0.6 },
+    tod: [0.85, 0.45, 1, 0.8], sol: 0.85, moonlight: 0.1,
+    season: { spring: 0.15, summer: 1, autumn: 0.9, winter: 0.6 }, temp: [10, 16, 26, 30],
+    seasonNote: { spring: 'Closed season 1 Sep to 30 Nov in most waters; leave them to spawn', summer: 'Opening season, fish are aggressive', autumn: 'Strong bite as water cools', winter: 'Slow but the biggest fish are caught now' },
+    tips: ['Big snags in deep holes on the outside of river bends', 'Spinnerbaits and big hardbodies slow-rolled through the timber; surface lures at night in summer', 'Check your state rules for closed season, size and bag limits'] },
+  { id: 'abass', name: 'Australian bass', latin: 'Percalates novemaculeata', hab: 'fresh',
+    range: [[-38.5, -24.5, 145.5, 154]], baro: 0.75,
+    geo: { snags: 1, stream: 0.9, weed: 0.8, openlake: 0.6, drop: 0.6, mouth: 0.5, jetty: 0.4, flats: 0.3, rockwall: 0.4, reef: 0.3 },
+    tod: [0.95, 0.4, 1, 0.7], sol: 0.75, moonlight: 0.2,
+    season: { spring: 0.9, summer: 1, autumn: 0.8, winter: 0.4 }, temp: [12, 18, 26, 30],
+    seasonNote: { spring: 'Back upstream after spawning, hungry', summer: 'Peak surface bite, especially at night', autumn: 'Feeding before the run downstream', winter: 'Run to the estuaries to spawn; some rivers are closed' },
+    tips: ['Surface lures under overhanging trees at dawn, dusk and on summer nights', 'Spinnerbaits and small crankbaits tight to snags', 'In dams, find schools on drop-offs with a sounder'] },
+  { id: 'redfin', name: 'Redfin perch', latin: 'Perca fluviatilis', hab: 'fresh',
+    range: [[38, 71, -10, 140], [-39, -28, 135, 153], [-35, -30, 114, 119], [-47, -34, 166, 179], [-35, -25, 20, 31]], baro: 0.7,
+    geo: { weed: 1, snags: 0.9, drop: 0.8, jetty: 0.8, openlake: 0.6, stream: 0.6, reef: 0.6, rockwall: 0.6, flats: 0.4, mouth: 0.4 },
+    tod: [1, 0.65, 0.95, 0.2], sol: 0.7, moonlight: 0,
+    season: { spring: 0.9, summer: 0.9, autumn: 0.9, winter: 0.6 }, temp: [6, 14, 24, 28],
+    seasonNote: { spring: 'Spawning in weedy shallows', summer: 'Schools around weed and timber', autumn: 'Schooling up and feeding well', winter: 'Deep schools, slow but catchable' },
+    tips: ['Small spinners, soft plastics or worms around weed edges and standing timber', 'Find the school and keep fishing it', 'Pest species in Australia: check rules, many waters ask you not to release them'] },
+  { id: 'golden', name: 'Golden perch (yellowbelly)', latin: 'Macquaria ambigua', hab: 'fresh',
+    range: [[-38, -20, 136, 153]], baro: 0.7,
+    geo: { snags: 1, drop: 0.8, stream: 0.8, openlake: 0.6, weed: 0.6, rockwall: 0.6, reef: 0.5, flats: 0.4, jetty: 0.4, mouth: 0.4 },
+    tod: [0.9, 0.5, 1, 0.6], sol: 0.75, moonlight: 0.1,
+    season: { spring: 0.95, summer: 1, autumn: 0.8, winter: 0.35 }, temp: [12, 20, 28, 32],
+    seasonNote: { spring: 'Rising water temps fire them up', summer: 'Peak season in rivers and dams', autumn: 'Still feeding as water cools', winter: 'Very slow below 12 °C' },
+    tips: ['Yabbies or shrimp near timber', 'Lipless crankbaits and spinnerbaits hopped through snags in dams', 'A rising river after rain can trigger a hot bite'] }
+];
+
+function seasonFor(dateStr, lat) {
+  const m = +dateStr.slice(5, 7);
+  const north = ['winter', 'winter', 'spring', 'spring', 'spring', 'summer', 'summer', 'summer', 'autumn', 'autumn', 'autumn', 'winter'];
+  const flip = { winter: 'summer', summer: 'winter', spring: 'autumn', autumn: 'spring' };
+  const s = north[m - 1];
+  return lat < 0 ? flip[s] : s;
+}
+
+function tempFactor(sp, tC) {
+  if (tC == null || isNaN(tC)) return { f: 1, note: null };
+  const [lo, ilo, ihi, hi] = sp.temp;
+  if (tC >= ilo && tC <= ihi) return { f: 1, note: 'ideal' };
+  if (tC < lo || tC > hi) return { f: 0.3, note: tC < lo ? 'too cold' : 'too warm' };
+  if (tC < ilo) return { f: 0.45 + 0.55 * (tC - lo) / (ilo - lo), note: 'on the cool side' };
+  return { f: 0.45 + 0.55 * (hi - tC) / (hi - ihi), note: 'on the warm side' };
+}
+
+// wx (optional live weather): { pressAt(t), swellAt(t), waterTemp(day, kind) }
+function scoreSpecies(sp, day, wx, geo) {
+  const [dawn, dayW, dusk, night] = sp.tod;
+  const pAt = wx ? day.samples.map(s => wx.pressAt(s.t)) : null;
+  const swAt = wx && sp.hab === 'salt' ? day.samples.map(s => wx.swellAt(s.t)) : null;
+  const acts = day.samples.map((s, i) => {
+    const light = clamp((s.sa + 6) / 12, 0, 1);
+    let tod = night + (dayW - night) * light;
+    if (s.twi > 0) tod = tod * (1 - s.twi) + (s.twiKind === 'rise' ? dawn : dusk) * s.twi;
+    if (s.sa < -6) tod *= 1 + sp.moonlight * 0.35 * day.illum.fraction * (s.ma > 0 ? 1 : 0.3);
+    const solc = s.sol * (0.35 + 0.65 * day.moonStrength);
+    const a = clamp(tod * (1 - 0.6 * sp.sol + 0.6 * sp.sol * (0.15 + 1.1 * solc)), 0, 1.2);
+    const pf = pAt && pAt[i] ? pressureFactor(sp, pAt[i]) : null, sf = swAt && swAt[i] ? swellFactor(sp, swAt[i], geo) : null;
+    return a * (pf ? pf.f : 1) * (sf ? sf.f : 1);
+  });
+  // best 2-hour stretch (12 samples) and mean of the best 6 hours
+  let best = 0;
+  for (let i = 0; i + 12 <= acts.length; i++) best = Math.max(best, acts.slice(i, i + 12).reduce((a, b) => a + b, 0) / 12);
+  const top = [...acts].sort((a, b) => b - a).slice(0, 36);
+  const topMean = top.reduce((a, b) => a + b, 0) / top.length;
+  const season = seasonFor(day.dateStr, day.lat);
+  const kind = sp.hab === 'salt' ? 'sea' : 'fresh';
+  const live = wx ? wx.waterTemp(day, kind) : null;
+  const tEst = live == null, tVal = tEst ? estWaterTemp(day.lat, day.dateStr, kind) : live;
+  const sf = sp.season[season], tf = tempFactor(sp, tVal), gf = geoFit(sp, geo);
+  const phaseF = 1 - 0.18 * sp.sol * (1 - day.moonStrength);
+  const mult = sf * tf.f * phaseF * (gf ? gf.f : 1);
+  const score = Math.round(clamp(100 * (0.6 * best + 0.4 * topMean) * mult / 0.95, 0, 100));
+  const windows = bestWindows(acts, day);
+  // conditions during the strongest window, for the card chips
+  const topW = windows.reduce((m, w) => (!m || w.v > m.v ? w : m), null);
+  const ci = topW ? Math.min(acts.length - 1, day.samples.findIndex(s => s.t >= topW.from) + 4) : 72;
+  const pf = pAt && pAt[ci] ? pressureFactor(sp, pAt[ci]) : null, swf = swAt && swAt[ci] ? swellFactor(sp, swAt[ci], geo) : null;
+  const sampleScores = acts.map(a => Math.round(clamp(100 * a * mult / 0.95, 0, 100)));
+  return { score, acts, sampleScores, windows, topW, season, sf, tf, gf, pf, swf, pAt, swAt, tVal, tEst };
+}
+
+// Two best non-overlapping 90-minute windows
+function bestWindows(acts, day) {
+  const W = 9, picks = [], used = new Array(acts.length).fill(false);
+  for (let k = 0; k < 2; k++) {
+    let best = -1, bi = -1;
+    for (let i = 0; i + W <= acts.length; i++) {
+      if (used.slice(i, i + W).some(Boolean)) continue;
+      const m = acts.slice(i, i + W).reduce((a, b) => a + b, 0) / W;
+      if (m > best) { best = m; bi = i; }
+    }
+    if (bi < 0) break;
+    if (k === 1 && best < 0.55 * picks[0].v) break;
+    for (let i = Math.max(0, bi - 6); i < Math.min(acts.length, bi + W + 6); i++) used[i] = true;
+    picks.push({ from: day.samples[bi].t, to: day.samples[Math.min(bi + W, day.samples.length - 1)].t, v: best });
+  }
+  return picks.sort((a, b) => a.from - b.from);
+}
+
+const ratingOf = s => s >= 75 ? ['Excellent', 'excellent'] : s >= 55 ? ['Good', 'good'] : s >= 35 ? ['Fair', 'fair'] : ['Poor', 'poor'];
+
+if (typeof module !== 'undefined') module.exports = { GEO, inRange, estWaterTemp, swellFactor, computeDay, scoreSpecies, SPECIES, fmtTime, zonedMidnight, phaseInfo, findEvents };
+</script>
+
+<script>
+if (typeof document !== 'undefined') (function () {
+const PRESETS = [
+  { n: 'Lake Fork, Texas', lat: 32.88, lng: -95.58, tz: 'America/Chicago', geo: 'snags', water: 'fresh' },
+  { n: 'Lake Okeechobee, Florida', lat: 26.95, lng: -80.80, tz: 'America/New_York', geo: 'weed', water: 'fresh' },
+  { n: 'Lake Erie, Port Clinton, Ohio', lat: 41.51, lng: -82.94, tz: 'America/New_York', geo: 'reef', water: 'fresh' },
+  { n: 'Mille Lacs Lake, Minnesota', lat: 46.23, lng: -93.65, tz: 'America/Chicago', geo: 'reef', water: 'fresh' },
+  { n: 'Galveston Bay, Texas', lat: 29.40, lng: -94.85, tz: 'America/Chicago', geo: 'flats', water: 'salt' },
+  { n: 'Sacramento Delta, California', lat: 38.10, lng: -121.60, tz: 'America/Los_Angeles', geo: 'stream', water: 'all' },
+  { n: 'Puget Sound, Seattle', lat: 47.60, lng: -122.40, tz: 'America/Los_Angeles', geo: 'drop', water: 'salt' },
+  { n: 'Lake Simcoe, Ontario', lat: 44.42, lng: -79.37, tz: 'America/Toronto', geo: 'weed', water: 'fresh' },
+  { n: 'River Thames, Oxford', lat: 51.75, lng: -1.26, tz: 'Europe/London', geo: 'stream', water: 'fresh' },
+  { n: 'Port Phillip Bay, Melbourne', lat: -38.10, lng: 144.85, tz: 'Australia/Melbourne', geo: 'reef', water: 'salt' },
+  { n: 'Botany Bay, Sydney', lat: -34.00, lng: 151.20, tz: 'Australia/Sydney', geo: 'flats', water: 'salt' },
+  { n: 'Moreton Bay, Brisbane', lat: -27.30, lng: 153.25, tz: 'Australia/Brisbane', geo: 'flats', water: 'salt' },
+  { n: 'Darwin Harbour, NT', lat: -12.47, lng: 130.85, tz: 'Australia/Darwin', geo: 'mouth', water: 'salt' },
+  { n: 'Swan River, Perth', lat: -32.00, lng: 115.85, tz: 'Australia/Perth', geo: 'flats', water: 'all' },
+  { n: 'Hawkesbury River, Brooklyn NSW', lat: -33.55, lng: 151.22, tz: 'Australia/Sydney', geo: 'drop', water: 'salt' },
+  { n: 'Lake Macquarie, NSW', lat: -33.05, lng: 151.62, tz: 'Australia/Sydney', geo: 'flats', water: 'salt' },
+  { n: 'Copeton Dam, NSW', lat: -29.90, lng: 150.93, tz: 'Australia/Sydney', geo: 'snags', water: 'fresh' },
+  { n: 'Lake Taupō, New Zealand', lat: -38.78, lng: 175.90, tz: 'Pacific/Auckland', geo: 'openlake', water: 'fresh' }
+];
+const $ = id => document.getElementById(id);
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+const saved = store.get('solunar-v4') || {};
+const state = { hab: 'all', unit: saved.unit || 'C', focus: null, customs: Array.isArray(saved.customs) ? saved.customs : [] };
+const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+const todayIn = tz => { const p = tzParts(Date.now(), tz); return `${p.y}-${String(p.mo).padStart(2, '0')}-${String(p.d).padStart(2, '0')}`; };
+const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+const compass = d => d == null ? '' : COMPASS[Math.round(((d % 360) + 360) % 360 / 45) % 8];
+
+/* ---------- Spots ---------- */
+$('geo').innerHTML = GEO.map(([k, l]) => `<option value="${k}">${l}</option>`).join('');
+function spotFor(key) {
+  const [kind, i] = String(key).split(':');
+  return kind === 'c' ? state.customs[+i] : PRESETS[+i];
+}
+function fillSpots(sel) {
+  const mine = state.customs.map((c, i) => `<option value="c:${i}">${esc(c.n)}</option>`).join('');
+  $('preset').innerHTML = (mine ? `<optgroup label="Your spots">${mine}</optgroup>` : '') +
+    `<optgroup label="Popular spots">${PRESETS.map((p, i) => `<option value="p:${i}">${esc(p.n)}</option>`).join('')}</optgroup>`;
+  $('preset').value = sel;
+}
+function applySpot(key) {
+  const sp = spotFor(key);
+  if (!sp) return;
+  $('geo').value = sp.geo || 'any';
+  setHab(sp.water || 'all');
+}
+function setHab(h) {
+  state.hab = h;
+  document.querySelectorAll('#habSeg button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.hab === h)));
+}
+function setUnit(u) {
+  state.unit = u;
+  document.querySelectorAll('#unitSeg button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.unit === u)));
+}
+let startKey = saved.spot && spotFor(saved.spot) ? saved.spot : null;
+if (!startKey) {
+  let i = PRESETS.findIndex(p => p.tz === browserTz);
+  if (i < 0) i = PRESETS.findIndex(p => p.tz.split('/')[0] === browserTz.split('/')[0]);
+  startKey = 'p:' + Math.max(0, i);
+}
+fillSpots(startKey);
+applySpot(startKey);
+if (saved.spot === startKey) { if (saved.geo) $('geo').value = saved.geo; if (saved.hab) setHab(saved.hab); }
+setUnit(state.unit);
+const loc = () => { const s = spotFor($('preset').value); return { lat: s.lat, lng: s.lng, tz: s.tz, name: s.n }; };
+$('date').value = todayIn(loc().tz);
+
+/* ---------- Place search (Open-Meteo geocoding) ---------- */
+$('controls').addEventListener('submit', async e => {
+  e.preventDefault();
+  const q = $('search').value.trim();
+  if (q.length < 2) return;
+  $('results').innerHTML = '<span class="hint">Searching…</span>';
+  try {
+    const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=6&language=en&format=json&name=' + encodeURIComponent(q));
+    const j = await r.json();
+    const hits = (j.results || []).filter(h => h.timezone);
+    $('results').innerHTML = hits.length
+      ? hits.map((h, i) => `<button type="button" data-i="${i}">${esc([h.name, h.admin1, h.country].filter(Boolean).join(', '))}</button>`).join('')
+      : '<span class="hint">No places found. Try a nearby town.</span>';
+    $('results').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      const h = hits[+b.dataset.i];
+      state.customs.unshift({ n: [h.name, h.admin1 || h.country].filter(Boolean).join(', '), lat: h.latitude, lng: h.longitude, tz: h.timezone, geo: 'any', water: 'all' });
+      state.customs = state.customs.slice(0, 8);
+      fillSpots('c:0'); applySpot('c:0');
+      $('results').innerHTML = ''; $('search').value = '';
+      $('date').value = todayIn(loc().tz);
+      render();
+    }));
+  } catch (err) {
+    $('results').innerHTML = '<span class="hint">Place search needs the live site. Pick a listed spot for now.</span>';
+  }
+});
+
+/* ---------- Live weather (Open-Meteo forecast + marine) ---------- */
+const WX = {};
+const wxKey = l => l.lat.toFixed(2) + ',' + l.lng.toFixed(2);
+async function loadWx(l) {
+  const k = wxKey(l);
+  if (WX[k]) return;
+  WX[k] = { status: 'loading' };
+  const base = `latitude=${l.lat}&longitude=${l.lng}&timezone=GMT&timeformat=unixtime`;
+  try {
+    const [f, m] = await Promise.all([
+      fetch(`https://api.open-meteo.com/v1/forecast?${base}&hourly=pressure_msl,temperature_2m&past_days=31&forecast_days=16`).then(r => r.ok ? r.json() : Promise.reject(r.status)),
+      fetch(`https://marine-api.open-meteo.com/v1/marine?${base}&hourly=swell_wave_height,swell_wave_period,swell_wave_direction,wave_height,sea_surface_temperature&past_days=1&forecast_days=8`)
+        .then(r => r.ok ? r.json() : null).catch(() => null)
+    ]);
+    const ser = (o, key) => o && o.hourly && o.hourly[key] && o.hourly[key].some(v => v != null) ? { T: o.hourly.time.map(x => x * 1000), v: o.hourly[key] } : null;
+    WX[k] = { status: 'ok', at: Date.now(), p: ser(f, 'pressure_msl'), air: ser(f, 'temperature_2m'),
+      sw: ser(m, 'swell_wave_height'), swp: ser(m, 'swell_wave_period'), swd: ser(m, 'swell_wave_direction'), wh: ser(m, 'wave_height'), sst: ser(m, 'sea_surface_temperature') };
+  } catch (err) {
+    WX[k] = { status: 'fail' };
+  }
+  render();
+}
+function at(s, t, nearest) {
+  if (!s || t < s.T[0] || t > s.T[s.T.length - 1]) return null;
+  const i = (t - s.T[0]) / 3600e3, a = Math.floor(i), b = Math.min(a + 1, s.v.length - 1);
+  const va = s.v[a], vb = s.v[b];
+  if (nearest || va == null || vb == null) return (i - a < 0.5 ? va : vb) ?? va ?? vb ?? null;
+  return va + (vb - va) * (i - a);
+}
+function meanIn(s, t0, t1) {
+  if (!s) return null;
+  let sum = 0, n = 0;
+  s.T.forEach((t, i) => { if (t >= t0 && t < t1 && s.v[i] != null) { sum += s.v[i]; n++; } });
+  return n ? { m: sum / n, n } : null;
+}
+function makeWx(l) {
+  const w = WX[wxKey(l)];
+  if (!w || w.status !== 'ok') return null;
+  return {
+    pressAt(t) {
+      const p = at(w.p, t);
+      if (p == null) return null;
+      const p3 = at(w.p, t - 3 * 3600e3), d3 = p3 == null ? 0 : p - p3;
+      return { hpa: p, d3, trend: d3 <= -1 ? 'fall' : d3 >= 2.5 ? 'post' : d3 >= 1 ? 'rise' : 'steady' };
+    },
+    swellAt(t) {
+      const h = at(w.sw, t);
+      return h == null ? null : { h, per: at(w.swp, t), dir: at(w.swd, t, true), wave: at(w.wh, t) };
+    },
+    waterTemp(day, kind) {
+      if (kind === 'sea') { const r = meanIn(w.sst, day.start, day.end); return r ? r.m : null; }
+      const r = meanIn(w.air, day.end - 30 * DAY_MS, day.end);
+      return r && r.n >= 24 * 7 ? Math.max(1, r.m + 2) : null;
+    },
+    raw: w
+  };
+}
+
+/* ---------- Formatting ---------- */
+const toU = c => state.unit === 'F' ? c * 9 / 5 + 32 : c;
+const fmtT = c => Math.round(toU(c)) + ' °' + state.unit;
+const TREND = { fall: 'Falling', steady: 'Steady', rise: 'Rising', post: 'Rising fast' };
+const dayLabel = (t, tz) => new Date(t).toLocaleDateString('en-GB', { timeZone: tz, weekday: 'short', day: 'numeric' });
+
+/* ---------- Hoverable area chart ---------- */
+function areaChart(host, o) {
+  const W = 760, H = 240, X0 = 44, X1 = 748, Y0 = 16, Y1 = 196;
+  const x = t => X0 + (X1 - X0) * (t - o.t0) / (o.t1 - o.t0);
+  const y = v => Y1 - (Y1 - Y0) * Math.min(v, o.yMax) / o.yMax;
+  let g = '';
+  for (const b of o.bands || []) g += `<rect x="${x(b.a).toFixed(1)}" y="${Y0}" width="${Math.max(0, x(b.b) - x(b.a)).toFixed(1)}" height="${Y1 - Y0}" fill="${b.fill}" opacity="${b.op}"/>`;
+  for (const v of o.yTicks) g += `<line x1="${X0}" x2="${X1}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${X0 - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" font-family="var(--f-mono)" fill="var(--muted)">${o.fmtY(v)}</text>`;
+  for (const b of o.labels || []) g += `<text x="${((x(b.a) + x(b.b)) / 2).toFixed(1)}" y="${Y0 + 13}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--accent)">${b.text}</text>`;
+  const pts = o.t.map((t, i) => o.v[i] == null ? null : [x(t), y(o.v[i])]);
+  let line = '', area = '', seg = [];
+  const flush = () => { if (seg.length > 1) { line += 'M' + seg.map(p => p.map(n => n.toFixed(1)).join(',')).join('L'); area += `M${seg[0][0].toFixed(1)},${Y1}L` + seg.map(p => p.map(n => n.toFixed(1)).join(',')).join('L') + `L${seg[seg.length - 1][0].toFixed(1)},${Y1}Z`; } seg = []; };
+  pts.forEach(p => p ? seg.push(p) : flush()); flush();
+  g += `<path d="${area}" fill="${o.color}" opacity=".18"/><path d="${line}" fill="none" stroke="${o.color}" stroke-width="2.2" stroke-linejoin="round"/>`;
+  for (const m of o.marks || []) g += `<line x1="${x(m.t)}" x2="${x(m.t)}" y1="${Y0}" y2="${Y1}" stroke="var(--brass)" stroke-dasharray="3 3"/><text x="${x(m.t)}" y="${Y0 - 4}" text-anchor="middle" font-size="10.5" fill="var(--muted)">${m.label}</text>`;
+  for (const p of o.pills || []) g += `<rect x="${x(p.a).toFixed(1)}" y="${Y1 + 4}" width="${Math.max(2, x(p.b) - x(p.a)).toFixed(1)}" height="7" rx="2" fill="var(--brass)" opacity="${p.op}"/>`;
+  for (const t of o.xTicks) g += `<text x="${x(t.t)}" y="${H - 14}" text-anchor="middle" font-size="11" font-family="var(--f-mono)" fill="var(--muted)">${t.label}</text>`;
+  g += `<g id="${host.id}-cur" visibility="hidden"><line y1="${Y0}" y2="${Y1}" stroke="var(--ink)" stroke-width="1.5"/><circle r="5" fill="${o.color}" stroke="var(--surface)" stroke-width="2"/></g>`;
+  host.innerHTML = `<div class="chart"><svg viewBox="0 0 ${W} ${H}" tabindex="0" role="img" aria-label="${esc(o.aria)}">${g}</svg><div class="tip" hidden></div></div>`;
+  const svg = host.querySelector('svg'), tip = host.querySelector('.tip'), cur = svg.querySelector('g[visibility]');
+  let idx = o.initial ?? 0;
+  const show = i => {
+    i = clamp(i, 0, o.t.length - 1);
+    idx = i;
+    const px = x(o.t[i]), v = o.v[i];
+    cur.setAttribute('visibility', 'visible');
+    cur.querySelector('line').setAttribute('x1', px); cur.querySelector('line').setAttribute('x2', px);
+    const c = cur.querySelector('circle');
+    if (v == null) c.setAttribute('visibility', 'hidden'); else { c.removeAttribute('visibility'); c.setAttribute('cx', px); c.setAttribute('cy', y(v)); }
+    tip.innerHTML = o.tip(i); tip.hidden = false;
+    const wrapW = host.querySelector('.chart').clientWidth || W, pxs = px / W * wrapW;
+    tip.style.left = clamp(pxs > wrapW / 2 ? pxs - 232 : pxs + 12, 0, Math.max(0, wrapW - 222)) + 'px';
+  };
+  const fromEvent = e => {
+    const r = svg.getBoundingClientRect(), px = (e.clientX - r.left) / r.width * W;
+    const t = o.t0 + (px - X0) / (X1 - X0) * (o.t1 - o.t0);
+    let best = 0, bd = Infinity;
+    o.t.forEach((tt, i) => { const d = Math.abs(tt - t); if (d < bd) { bd = d; best = i; } });
+    show(best);
+  };
+  svg.addEventListener('pointermove', fromEvent);
+  svg.addEventListener('pointerdown', fromEvent);
+  svg.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') { show(idx + (o.step || 1)); e.preventDefault(); }
+    if (e.key === 'ArrowLeft') { show(idx - (o.step || 1)); e.preventDefault(); }
+  });
+  show(idx);
+}
+
+/* ---------- Sky drawings (moon, solunar timeline) ---------- */
+function drawMoon(il, lat) {
+  const R = 52, f = il.fraction, waxing = il.phase < 0.5;
+  let litRight = waxing; if (lat < 0) litRight = !litRight;
+  const rx = Math.abs(1 - 2 * f) * R, gib = f > 0.5;
+  const sx = litRight ? 1 : 0;
+  let sweep2 = gib ? 1 : 0; if (!litRight) sweep2 = 1 - sweep2;
+  const path = `M0,${-R} A${R},${R} 0 0 ${sx} 0,${R} A${rx},${R} 0 0 ${sweep2} 0,${-R}Z`;
+  $('moonSvg').innerHTML = `<circle r="${R}" fill="var(--sky-night)"/><path d="${path}" fill="var(--brass)"/><circle r="${R}" fill="none" stroke="var(--line)"/>`;
+}
+function drawTimeline(day) {
+  const X0 = 40, X1 = 740, Y0 = 18, H = 108, span = day.end - day.start;
+  const x = t => X0 + (X1 - X0) * (t - day.start) / span;
+  let bg = '';
+  day.samples.forEach((s, i) => {
+    const t2 = i + 1 < day.samples.length ? day.samples[i + 1].t : day.end;
+    const c = s.sa > 0 ? 'var(--sky-day)' : s.sa > -6 ? 'var(--sky-twi)' : 'var(--sky-night)';
+    bg += `<rect x="${x(s.t).toFixed(1)}" y="${Y0}" width="${(x(t2) - x(s.t) + 0.6).toFixed(1)}" height="${H}" fill="${c}"/>`;
+  });
+  const yAlt = a => Y0 + H / 2 - (a / 90) * (H / 2 - 6);
+  const moonPath = day.samples.map((s, i) => `${i ? 'L' : 'M'}${x(s.t).toFixed(1)},${yAlt(s.ma).toFixed(1)}`).join('');
+  const clipT = t => Math.max(day.start, Math.min(day.end, t));
+  let periods = '';
+  for (const e of day.allMajors) {
+    const a = clipT(e.t - 60 * 60000), b = clipT(e.t + 60 * 60000);
+    if (b > a) periods += `<rect x="${x(a)}" y="${Y0 + H + 6}" width="${x(b) - x(a)}" height="12" rx="2" fill="var(--brass)"/>`;
+  }
+  for (const e of day.allMinors) {
+    const a = clipT(e.t - 30 * 60000), b = clipT(e.t + 30 * 60000);
+    if (b > a) periods += `<rect x="${x(a)}" y="${Y0 + H + 6}" width="${x(b) - x(a)}" height="12" rx="2" fill="var(--brass)" opacity=".5"/>`;
+  }
+  let ticks = '';
+  for (let h = 0; h <= 24; h += 3) {
+    const t = day.start + h * 3600e3 * (span / DAY_MS);
+    ticks += `<line x1="${x(t)}" x2="${x(t)}" y1="${Y0 + H}" y2="${Y0 + H + 4}" stroke="var(--muted)"/><text x="${x(t)}" y="${Y0 + H + 34}" text-anchor="middle" font-size="11" font-family="var(--f-mono)" fill="var(--muted)">${String(h % 24).padStart(2, '0')}:00</text>`;
+  }
+  let marks = '';
+  [...day.sunRise.map(e => ['Sunrise', e.t]), ...day.sunSet.map(e => ['Sunset', e.t])].forEach(([lbl, t]) => {
+    marks += `<line x1="${x(t)}" x2="${x(t)}" y1="${Y0}" y2="${Y0 + H}" stroke="var(--brass)" stroke-dasharray="3 3"/><text x="${x(t)}" y="${Y0 - 5}" text-anchor="middle" font-size="11" fill="var(--muted)">${lbl}</text>`;
+  });
+  const now = Date.now();
+  if (now >= day.start && now < day.end) marks += `<line x1="${x(now)}" x2="${x(now)}" y1="${Y0}" y2="${Y0 + H + 18}" stroke="var(--ink)" stroke-width="2"/><text x="${x(now) + 4}" y="${Y0 + 12}" font-size="11" fill="var(--ink)" font-weight="600">now</text>`;
+  $('timeline').innerHTML = bg +
+    `<line x1="${X0}" x2="${X1}" y1="${yAlt(0)}" y2="${yAlt(0)}" stroke="var(--muted)" stroke-opacity=".5"/>` +
+    `<text x="${X0 - 6}" y="${yAlt(0) + 4}" text-anchor="end" font-size="10" fill="var(--muted)">horizon</text>` +
+    `<path d="${moonPath}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>` + periods + ticks + marks;
+}
+const listTimes = (evs, tz, span) => evs.length ? evs.map(e => fmtTime(e.t, tz) + (span ? '–' + fmtTime(e.t + span, tz) : '')).join(', ') : 'none';
+
+/* ---------- When to go ---------- */
+function reasonsAt(day, i, r, sp) {
+  const s = day.samples[i], out = [];
+  if (s.sa < -6) out.push('Night' + (s.ma > 0 && day.illum.fraction > 0.5 ? ', bright moon up' : ''));
+  else if (s.twi > 0.45) out.push(s.twiKind === 'rise' ? 'Dawn change of light' : 'Dusk change of light');
+  else out.push(s.sa < 0 ? 'Twilight' : 'Daylight');
+  const maj = day.allMajors.find(e => Math.abs(e.t - s.t) <= 60 * 60000);
+  const min = day.allMinors.find(e => Math.abs(e.t - s.t) <= 30 * 60000);
+  if (maj) out.push('Major period: moon ' + (maj.type === 'upper' ? 'overhead' : 'underfoot'));
+  else if (min) out.push('Minor period: ' + (min.type === 'rise' ? 'moonrise' : 'moonset'));
+  const p = r.pAt && r.pAt[i];
+  if (p) out.push(`Pressure ${Math.round(p.hpa)} hPa, ${TREND[p.trend].toLowerCase()} (${p.d3 >= 0 ? '+' : ''}${p.d3.toFixed(1)} in 3 h)`);
+  const sw = r.swAt && r.swAt[i];
+  if (sw) { const f = swellFactor(sp, sw, $('geo').value); out.push(`Swell ${sw.h.toFixed(1)} m${sw.per ? ' @ ' + Math.round(sw.per) + ' s' : ''}${f ? ', ' + f.note : ''}`); }
+  return out;
+}
+function drawGo(day, l, sp, r) {
+  if (!sp) { $('goHead').innerHTML = ''; $('goChart').innerHTML = '<p class="nodata">No species to show for this spot.</p>'; return; }
+  const topW = r.topW, others = r.windows.filter(w => w !== topW);
+  let pi = 0; r.sampleScores.forEach((v, i) => { if (v > r.sampleScores[pi]) pi = i; });
+  const [lbl, cls] = ratingOf(r.score);
+  $('goHead').innerHTML = topW
+    ? `<span class="big">Go ${fmtTime(topW.from, l.tz)}–${fmtTime(topW.to, l.tz)}</span>
+       <span>Peak at <b class="mono">${fmtTime(day.samples[pi].t, l.tz)}</b></span>
+       ${others.length ? `<span class="muted">Also good ${others.map(w => `<span class="mono">${fmtTime(w.from, l.tz)}–${fmtTime(w.to, l.tz)}</span>`).join(', ')}</span>` : ''}
+       <span class="r-${cls}">Day rating ${r.score} · ${lbl}</span>`
+    : '';
+  const bands = [], night = [];
+  let ns = null;
+  day.samples.forEach((s, i) => {
+    const dark = s.sa < -6;
+    if (dark && ns == null) ns = s.t;
+    if ((!dark || i === day.samples.length - 1) && ns != null) { night.push({ a: ns, b: dark ? day.end : s.t }); ns = null; }
+  });
+  night.forEach(n => bands.push({ ...n, fill: 'var(--sky-night)', op: 0.13 }));
+  r.windows.forEach(w => bands.push({ a: w.from, b: w.to, fill: 'var(--accent)', op: w === topW ? 0.2 : 0.1 }));
+  const pills = [
+    ...day.allMajors.map(e => ({ a: Math.max(day.start, e.t - 3600e3), b: Math.min(day.end, e.t + 3600e3), op: 1 })),
+    ...day.allMinors.map(e => ({ a: Math.max(day.start, e.t - 1800e3), b: Math.min(day.end, e.t + 1800e3), op: 0.5 }))
+  ].filter(p => p.b > p.a);
+  const xTicks = [];
+  for (let h = 0; h <= 24; h += 3) xTicks.push({ t: day.start + h * 3600e3 * ((day.end - day.start) / DAY_MS), label: String(h % 24).padStart(2, '0') + ':00' });
+  areaChart($('goChart'), {
+    t: day.samples.map(s => s.t), v: r.sampleScores, t0: day.start, t1: day.end, yMax: 100,
+    yTicks: [25, 50, 75, 100], fmtY: v => v, color: 'var(--accent)', bands, pills, xTicks, step: 3, initial: pi,
+    labels: topW ? [{ a: topW.from, b: topW.to, text: 'GO' }] : [],
+    marks: [...day.sunRise.map(e => ({ t: e.t, label: 'Sunrise' })), ...day.sunSet.map(e => ({ t: e.t, label: 'Sunset' }))],
+    aria: `${sp.name} bite rating through the day`,
+    tip: i => {
+      const v = r.sampleScores[i], [l2, c2] = ratingOf(v);
+      return `<b>${fmtTime(day.samples[i].t, l.tz)}</b> · <span class="r-${c2}"><b>${v}</b> ${l2}</span><ul>${reasonsAt(day, i, r, sp).map(x => `<li>${x}</li>`).join('')}</ul>`;
+    }
+  });
+}
+
+/* ---------- Conditions + swell ---------- */
+function drawConditions(l, day, days, wx, here) {
+  const w = WX[wxKey(l)];
+  $('condSrc').textContent = !w || w.status === 'loading' ? 'Loading live conditions…'
+    : w.status === 'ok' ? `Live forecast · Open-Meteo · updated ${fmtTime(w.at, l.tz)}`
+    : 'Seasonal estimates · live data loads on the hosted site';
+  const now = Date.now(), ref = now >= day.start && now < day.end ? now : day.start + 12 * 3600e3;
+  const refLbl = ref === now ? 'now' : 'at midday';
+  const salt = here.some(s => s.hab === 'salt'), fresh = here.some(s => s.hab === 'fresh');
+  const tiles = [];
+  const wt = kind => { const v = wx && wx.waterTemp(day, kind); return v != null ? [fmtT(v), 'live'] : [fmtT(estWaterTemp(l.lat, day.dateStr, kind)), 'seasonal estimate']; };
+  if (salt) { const [v, s] = wt('sea'); tiles.push(['Sea temperature', v, s]); }
+  if (fresh) { const [v, s] = wt('fresh'); tiles.push(['Lake and river temperature', v, s]); }
+  const p = wx && wx.pressAt(ref);
+  tiles.push(['Air pressure', p ? Math.round(p.hpa) + ' hPa' : '—', p ? refLbl : 'no forecast for this date']);
+  tiles.push(['Pressure trend', p ? TREND[p.trend] : '—', p ? `${p.d3 >= 0 ? '+' : ''}${p.d3.toFixed(1)} hPa in 3 h` : 'no forecast for this date']);
+  if (salt) {
+    const sw = wx && wx.swellAt(ref);
+    tiles.push(['Swell', sw ? `${sw.h.toFixed(1)} m${sw.per ? ' · ' + Math.round(sw.per) + ' s' : ''}` : '—', sw ? `${compass(sw.dir)} ${refLbl}` : 'no swell data for this date']);
+  }
+  $('tiles').innerHTML = tiles.map(([k, v, s]) => `<div class="tile"><span class="k">${k}</span><span class="v">${v}</span><span class="s">${s}</span></div>`).join('');
+
+  const box = $('swellChart');
+  box.parentElement.hidden = !salt;
+  if (!salt) return;
+  const t0 = days[0].start, t1 = days[days.length - 1].end;
+  const raw = w && w.status === 'ok' && w.sw ? w.sw : null;
+  const T = [], V = [];
+  if (raw) raw.T.forEach((t, i) => { if (t >= t0 && t <= t1) { T.push(t); V.push(raw.v[i]); } });
+  if (!T.length || !V.some(v => v != null)) {
+    box.innerHTML = `<p class="nodata">${raw ? 'No swell forecast reaches these dates yet. The marine forecast covers about the next week.' : 'The swell graph fills in from the live marine forecast on the hosted site.'}</p>`;
+    return;
+  }
+  const max = Math.max(...V.filter(v => v != null));
+  const yMax = Math.max(1.5, Math.ceil(max * 2) / 2);
+  const focus = SPECIES.find(s => s.id === state.focus);
+  const bands = [{ a: day.start, b: day.end, fill: 'var(--accent)', op: 0.08 }];
+  const xTicks = days.map(d => ({ t: d.start + 12 * 3600e3, label: dayLabel(d.start + 12 * 3600e3, l.tz) }));
+  const ideal = focus && focus.swell && focus.hab === 'salt' ? focus.swell : null;
+  let ni = 0; T.forEach((t, i) => { if (Math.abs(t - ref) < Math.abs(T[ni] - ref)) ni = i; });
+  areaChart(box, {
+    t: T, v: V, t0, t1, yMax, yTicks: [0.5, 1, 1.5, 2, 3, 4, 5, 6].filter(v => v <= yMax), fmtY: v => v + ' m',
+    color: 'var(--brass)', bands, xTicks, step: 3, initial: ni,
+    marks: days.slice(1).map(d => ({ t: d.start, label: '' })),
+    aria: 'Swell height over the next 7 days',
+    tip: i => {
+      const t = T[i], per = at(raw ? WX[wxKey(l)].swp : null, t), dir = at(raw ? WX[wxKey(l)].swd : null, t, true), wv = at(raw ? WX[wxKey(l)].wh : null, t);
+      const fit = ideal && V[i] != null ? (V[i] < ideal[0] ? 'below' : V[i] > ideal[1] ? 'above' : 'inside') : null;
+      return `<b>${dayLabel(t, l.tz)} ${fmtTime(t, l.tz)}</b><ul>
+        <li>Swell ${V[i] == null ? '—' : V[i].toFixed(1) + ' m'}${per ? ' @ ' + Math.round(per) + ' s' : ''} ${compass(dir)}</li>
+        ${wv != null ? `<li>Total sea ${wv.toFixed(1)} m</li>` : ''}
+        ${fit ? `<li>${fit === 'inside' ? 'Inside' : fit === 'below' ? 'Below' : 'Above'} the ${ideal[0]}–${ideal[1]} m that ${focus.name.split(' (')[0].toLowerCase()} like</li>` : ''}
+      </ul>`;
+    }
+  });
+  if (ideal) {
+    const svg = box.querySelector('svg'), Y0 = 16, Y1 = 196, y = v => Y1 - (Y1 - Y0) * Math.min(v, yMax) / yMax;
+    svg.insertAdjacentHTML('afterbegin', `<rect x="44" y="${y(ideal[1])}" width="704" height="${y(ideal[0]) - y(ideal[1])}" fill="var(--excellent)" opacity=".1"/><text x="744" y="${y(ideal[1]) + 12}" text-anchor="end" font-size="10.5" fill="var(--muted)">ideal for ${esc(focus.name.split(' (')[0].toLowerCase())}</text>`);
+  }
+}
+
+/* ---------- Events ---------- */
+const shiftDate = n => { $('date').value = addDays($('date').value || todayIn(loc().tz), n); render(); };
+$('prevDay').addEventListener('click', () => shiftDate(-1));
+$('nextDay').addEventListener('click', () => shiftDate(1));
+$('todayBtn').addEventListener('click', () => { $('date').value = todayIn(loc().tz); render(); });
+$('preset').addEventListener('change', () => { applySpot($('preset').value); $('date').value = todayIn(loc().tz); render(); });
+['date', 'geo'].forEach(id => $(id).addEventListener('change', render));
+$('focus').addEventListener('change', () => { state.focus = $('focus').value; render(); });
+document.querySelectorAll('#habSeg button').forEach(b => b.addEventListener('click', () => { setHab(b.dataset.hab); render(); }));
+document.querySelectorAll('#unitSeg button').forEach(b => b.addEventListener('click', () => { setUnit(b.dataset.unit); render(); }));
+
+/* ---------- Render ---------- */
+function render() {
+  const l = loc(), dateStr = $('date').value || todayIn(l.tz);
+  const geo = $('geo').value;
+  store.set('solunar-v4', { spot: $('preset').value, geo, hab: state.hab, unit: state.unit, customs: state.customs });
+  loadWx(l);
+  const wx = makeWx(l);
+  const here = SPECIES.filter(s => inRange(s, l.lat, l.lng));
+  const shown = here.filter(s => state.hab === 'all' || s.hab === state.hab);
+  const day = computeDay(dateStr, l);
+  const days = [...Array(7)].map((_, i) => computeDay(addDays(dateStr, i), l));
+
+  // Species scores for the day
+  const list = shown.map(sp => ({ sp, r: scoreSpecies(sp, day, wx, geo) })).sort((a, b) => b.r.score - a.r.score);
+  if (!list.some(x => x.sp.id === state.focus)) state.focus = list.length ? list[0].sp.id : null;
+  $('focus').innerHTML = list.map(({ sp, r }) => `<option value="${sp.id}">${esc(sp.name)} · ${r.score}</option>`).join('');
+  if (state.focus) $('focus').value = state.focus;
+  const f = list.find(x => x.sp.id === state.focus);
+  drawGo(day, l, f && f.sp, f && f.r);
+  drawConditions(l, day, days, wx, shown.length ? shown : here);
+
+  // Sky
+  drawMoon(day.illum, l.lat);
+  $('phaseName').textContent = phaseInfo(day.illum.phase);
+  $('phaseIllum').textContent = Math.round(day.illum.fraction * 100) + '% lit';
+  $('dayRating').innerHTML = [1, 2, 3, 4].map(i => `<span class="${i <= day.dayStars ? 'on' : ''}"></span>`).join('');
+  $('dayRating').setAttribute('aria-label', day.dayStars + ' of 4');
+  $('dayRatingText').textContent = ['', 'Below average', 'Average', 'Good', 'Best'][day.dayStars] + (day.overlap ? ' · a period lines up with ' + (day.overlap > 1 ? 'sunrise and sunset' : 'sunrise or sunset') : '');
+  $('skyDate').textContent = new Date(day.start + 12 * 3600e3).toLocaleDateString('en-GB', { timeZone: l.tz, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ' · ' + l.name;
+  drawTimeline(day);
+  $('times').innerHTML = `
+    <div><b>Major periods</b><span class="mono">${listTimes(day.majors.map(e => ({ t: e.t - 3600e3 })), l.tz, 7200e3)}</span></div>
+    <div><b>Minor periods</b><span class="mono">${listTimes(day.minors.map(e => ({ t: e.t - 1800e3 })), l.tz, 3600e3)}</span></div>
+    <div><b>Sunrise · Sunset</b><span class="mono">${listTimes(day.sunRise, l.tz)} · ${listTimes(day.sunSet, l.tz)}</span></div>
+    <div><b>Moonrise · Moonset</b><span class="mono">${listTimes(day.moonRise, l.tz)} · ${listTimes(day.moonSet, l.tz)}</span></div>`;
+
+  // Species cards
+  $('species').innerHTML = list.map(({ sp, r }) => {
+    const [lbl, cls] = ratingOf(r.score);
+    const strip = [];
+    for (let i = 0; i < 48; i++) {
+      const v = (r.acts[i * 3] + r.acts[i * 3 + 1] + r.acts[i * 3 + 2]) / 3;
+      strip.push(`<span style="opacity:${(0.08 + 0.92 * clamp(v, 0, 1) ** 1.6).toFixed(2)}"></span>`);
+    }
+    const wins = r.windows.map(w => `<span class="mono">${fmtTime(w.from, l.tz)}–${fmtTime(w.to, l.tz)}</span>`).join('');
+    const sName = r.season[0].toUpperCase() + r.season.slice(1);
+    const tChip = `<span class="chip${r.tf.f < 0.6 ? ' warn' : ''}">Water ${r.tEst ? '~' : ''}${fmtT(r.tVal)}${r.tEst ? ' (est.)' : ''}: ${r.tf.note}</span>`;
+    const pChip = r.pf ? `<span class="chip${r.pf.f < 0.9 ? ' warn' : ''}">Pressure: ${r.pf.note}</span>` : '';
+    const sChip = r.swf ? `<span class="chip${r.swf.f < 0.9 ? ' warn' : ''}">Swell ${r.swf.h.toFixed(1)} m: ${r.swf.note}</span>` : '';
+    const gChip = r.gf ? `<span class="chip${r.gf.v < 0.4 ? ' warn' : ''}">${GEO_NAME[geo].split(' or ')[0]}: ${r.gf.note}</span>`
+      : `<span class="chip warn">Look for: ${bestGeo(sp).join(', ')}</span>`;
+    return `<article class="card">
+      <div class="card-head">
+        <div><h3>${sp.name}</h3><div class="latin">${sp.latin}</div></div>
+        <div class="score r-${cls}"><div class="num">${r.score}</div><span class="pill">${lbl}</span></div>
+      </div>
+      <div><div class="eyebrow" style="margin-bottom:4px">Best windows</div><div class="windows">${wins}</div></div>
+      <div><div class="strip" aria-hidden="true">${strip.join('')}</div><div class="strip-axis"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div></div>
+      <div class="chips"><span class="chip">${sName}: ${sp.seasonNote[r.season]}</span>${gChip}${tChip}${pChip}${sChip}</div>
+      <button type="button" class="seebtn" data-focus="${sp.id}">See when to go</button>
+      <details><summary>How to fish it</summary><ul>${sp.tips.map(t => `<li>${t}</li>`).join('')}<li>Comfort range ${sp.temp[1]}–${sp.temp[2]} °C (${Math.round(sp.temp[1] * 9 / 5 + 32)}–${Math.round(sp.temp[2] * 9 / 5 + 32)} °F)</li>${sp.swell ? `<li>Likes ${sp.swell[0]}–${sp.swell[1]} m of swell where it's exposed</li>` : ''}</ul></details>
+    </article>`;
+  }).join('') || `<p class="empty">${here.length ? 'None of the species here match this filter. Try All.' : 'None of the species in the guide are found here yet. Tell Claude which fish you catch here and they can be added.'}</p>`;
+  $('species').querySelectorAll('[data-focus]').forEach(b => b.addEventListener('click', () => {
+    state.focus = b.dataset.focus; render(); $('goTitle').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }));
+
+  // Week
+  const cellColor = s => `color-mix(in srgb, var(--${ratingOf(s)[1]}) ${Math.round(18 + s * 0.45)}%, transparent)`;
+  const head = days.map(dd => `<th class="${dd.dateStr === dateStr ? 'sel' : ''}"><button type="button" data-date="${dd.dateStr}">${dayLabel(dd.start + 12 * 3600e3, l.tz)}</button></th>`).join('');
+  const weekScores = shown.map(sp => days.map(dd => scoreSpecies(sp, dd, wx, geo).score));
+  const bestRow = shown.length ? `<tr class="bestrow"><td><b>Best bet</b></td>${days.map((dd, j) => { let bi = 0; weekScores.forEach((r, i) => { if (r[j] > weekScores[bi][j]) bi = i; }); return `<td>${shown[bi].name.split(' (')[0]}</td>`; }).join('')}</tr>` : '';
+  const rows = shown.map((sp, si) => `<tr><td>${sp.name}</td>${days.map((dd, j) => { const s = weekScores[si][j]; return `<td><span class="cell" style="background:${cellColor(s)}">${s}</span></td>`; }).join('')}</tr>`).join('');
+  const moonRow = `<tr class="moonrow"><td>Moon</td>${days.map(dd => `<td>${phaseInfo(dd.illum.phase).replace(' moon', '')}<br>${'●'.repeat(dd.dayStars)}${'○'.repeat(4 - dd.dayStars)}</td>`).join('')}</tr>`;
+  $('week').innerHTML = `<thead><tr><th>Species</th>${head}</tr></thead><tbody>${bestRow}${rows}${moonRow}</tbody>`;
+  $('week').querySelectorAll('button[data-date]').forEach(b => b.addEventListener('click', () => { $('date').value = b.dataset.date; render(); }));
+}
+render();
+})();
+
+</script>
