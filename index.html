@@ -67,10 +67,13 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .empty{padding:16px;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}
 .bestrow td{font-size:12px}
 .btn{flex:none;border:1px solid var(--accent);background:var(--accent);color:var(--surface);border-radius:6px;padding:0 14px;cursor:pointer;font-weight:600}
-.results{display:flex;flex-wrap:wrap;gap:6px}
-.results:empty{display:none}
-.results button{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:4px 10px;font-size:13px;cursor:pointer}
-.results button:hover{border-color:var(--accent)}
+.combo{position:relative}
+.suggest{position:absolute;z-index:20;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px color-mix(in srgb,var(--ink) 16%,transparent);max-height:340px;overflow-y:auto}
+.suggest li{display:flex;flex-direction:column;gap:1px;padding:7px 10px;border-radius:6px;cursor:pointer}
+.suggest li small{color:var(--muted);font-size:12px}
+.suggest li:hover,.suggest li[aria-selected="true"]{background:var(--accent-soft)}
+.suggest li.info{cursor:default;color:var(--muted)}
+.suggest li.info:hover{background:none}
 .panel{display:flex;flex-direction:column;gap:14px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:10px;min-width:0}
 .go-head{display:flex;flex-wrap:wrap;gap:4px 22px;align-items:baseline}
 .go-head .big{font-family:var(--f-display);font-size:26px;font-weight:700}
@@ -165,11 +168,10 @@ table.week tbody tr:last-child td{border-bottom:0}
     </div>
     <div class="field wide">
       <label for="search">Find another spot</label>
-      <div class="row">
-        <input id="search" type="search" placeholder="Town, lake, river or beach">
-        <button type="submit" class="btn">Search</button>
+      <div class="combo">
+        <input id="search" type="search" placeholder="Start typing a town, lake, river or beach" role="combobox" aria-expanded="false" aria-controls="suggest" aria-autocomplete="list">
+        <ul class="suggest" id="suggest" role="listbox" aria-label="Matching spots" hidden></ul>
       </div>
-      <div class="results" id="results"></div>
     </div>
     <div class="field wide">
       <label for="geo">Spot type</label>
@@ -474,7 +476,7 @@ function pressureFactor(sp, press) {
 const EXPOSURE = { surf: 1, rockwall: 1, reef: 0.8, any: 0.5, mouth: 0.5, drop: 0.3, jetty: 0.3, flats: 0.2, weed: 0.2, snags: 0.1, openlake: 0, stream: 0 };
 // sw: { h } swell height in metres ; sp.swell = [ideal low, ideal high]
 function swellFactor(sp, sw, geo) {
-  if (!sw || sp.hab !== 'salt' || !sp.swell) return null;
+  if (!sw || sp.hab === 'fresh' || !sp.swell) return null;
   const exp = EXPOSURE[geo || 'any'] ?? 0.5;
   if (!exp) return null;
   const [lo, hi] = sp.swell, h = sw.h;
@@ -505,7 +507,7 @@ const SPECIES = [
     seasonNote: { spring: 'Hatches start and fish feed hard', summer: 'Heat pushes fish deep or to cold inflows', autumn: 'Feeding before winter, strong bite', winter: 'Slow, fish the warmest part of the day' },
     tips: ['Watch for hatches in the first and last light', 'In warm weather fish cold inflows, springs and depth', 'Above 21 °C trout are stressed; consider catch-and-release care or another target'] },
   { id: 'walleye', name: 'Walleye', latin: 'Sander vitreus', hab: 'fresh',
-    range: [[30, 66, -125, -64]], baro: 0.9,
+    range: [[30, 66, -120, -64], [44, 50, -125, -120]], baro: 0.9,
     geo: { reef: 1, drop: 0.9, mouth: 0.8, stream: 0.7, openlake: 0.6, weed: 0.6, flats: 0.5, snags: 0.4, jetty: 0.4, rockwall: 0.6 },
     tod: [0.85, 0.25, 1, 0.85], sol: 0.8, moonlight: 0.35,
     season: { spring: 0.9, summer: 0.7, autumn: 1, winter: 0.6 }, temp: [4, 15, 22, 27],
@@ -526,20 +528,20 @@ const SPECIES = [
     seasonNote: { spring: 'Spawn brings them shallow in big schools', summer: 'Suspended over deep brush', autumn: 'Following baitfish back to the shallows', winter: 'Tight schools in deep water' },
     tips: ['Small jigs and minnows around brush piles and docks', 'Fish under lights at night in summer', 'Find one and you have found the school'] },
   { id: 'pike', name: 'Northern pike', latin: 'Esox lucius', hab: 'fresh',
-    range: [[38, 72, -170, -60], [36, 72, -10, 180]], baro: 0.85,
+    range: [[40, 72, -170, -65], [36, 72, -10, 180]], baro: 0.85,
     geo: { weed: 1, mouth: 0.7, snags: 0.7, flats: 0.6, drop: 0.6, stream: 0.6, openlake: 0.5, jetty: 0.4, reef: 0.4, rockwall: 0.3 },
     tod: [0.85, 0.6, 0.8, 0.1], sol: 0.6, moonlight: 0,
     season: { spring: 1, summer: 0.55, autumn: 1, winter: 0.7 }, temp: [2, 10, 19, 25],
     seasonNote: { spring: 'Post-spawn pike are hungry in shallow bays', summer: 'Big fish go deep and cool', autumn: 'Big fish feed hard and come shallow', winter: 'Good ice-fishing target' },
     tips: ['A sight hunter, so daylight is fine and midday can be good', 'Spinnerbaits, spoons and jerkbaits along weed lines', 'Use a wire or heavy fluoro leader'] },
   { id: 'carp', name: 'Common carp', latin: 'Cyprinus carpio', hab: 'fresh',
-    range: [[-46, 62, -180, 180]], baro: 0.5,
+    range: [[-46, 62, -180, 113], [-46, -24, 113, 154], [-10, 62, 113, 165], [-38.5, -36.5, 174.5, 176]], baro: 0.5,
     geo: { flats: 0.9, weed: 0.9, stream: 0.7, openlake: 0.6, mouth: 0.6, snags: 0.6, jetty: 0.5, drop: 0.4, reef: 0.2, rockwall: 0.3 },
     tod: [0.9, 0.6, 0.8, 0.7], sol: 0.5, moonlight: 0,
     season: { spring: 0.9, summer: 0.9, autumn: 0.75, winter: 0.3 }, temp: [8, 18, 28, 32],
     seasonNote: { spring: 'Warming shallows draw them in', summer: 'Feeding most of the day and night', autumn: 'Feeding up before the cold', winter: 'Very slow' },
     tips: ['Pre-bait a spot with corn or pellets', 'Look for bubbles and clouded water where they root', 'Light line and a patient, still presentation'] },
-  { id: 'barra', name: 'Barramundi', latin: 'Lates calcarifer', hab: 'salt',
+  { id: 'barra', name: 'Barramundi', latin: 'Lates calcarifer', hab: 'both',
     range: [[-27, 25, 68, 155]], baro: 0.4,
     swell: [0, 1], geo: { snags: 1, mouth: 1, rockwall: 0.8, drop: 0.7, stream: 0.7, jetty: 0.6, flats: 0.5, weed: 0.4, reef: 0.4, surf: 0.3 },
     tod: [0.9, 0.4, 1, 0.8], sol: 0.9, moonlight: 0.1,
@@ -582,7 +584,7 @@ const SPECIES = [
     seasonNote: { spring: 'Spread through the estuary after spawning', summer: 'Up on the flats and around structure', autumn: 'Feeding hard and schooling up', winter: 'Schooling at river mouths and walls to spawn' },
     tips: ['Cast small lures tight to oyster racks, pontoons and rock walls', 'Light fluorocarbon leader; they are line-shy in clear water', 'Peeled prawn or nippers drifted with little or no weight'] },
   { id: 'tailor', name: 'Tailor', latin: 'Pomatomus saltatrix', hab: 'salt',
-    range: [[-39, -23, 148, 154], [-35, -24, 112, 119], [-38, -32, 134, 142], [24, 45, -82, -65], [30, 46, -6, 42], [-35, 15, -20, 35], [-40, -20, -60, -38]], baro: 0.3,
+    range: [[-39, -23, 148, 154], [-35, -24, 112, 119], [-38, -32, 134, 142], [24, 45, -82, -65], [30, 46, -10, 42], [-35, 15, -20, 35], [-40, -20, -60, -38]], baro: 0.3,
     swell: [1, 2.2], geo: { surf: 1, rockwall: 1, mouth: 0.9, reef: 0.6, jetty: 0.6, drop: 0.5, flats: 0.3, weed: 0.3, stream: 0 },
     tod: [1, 0.35, 1, 0.5], sol: 0.7, moonlight: 0.1,
     season: { spring: 0.8, summer: 0.7, autumn: 0.95, winter: 1 }, temp: [14, 18, 24, 27],
@@ -615,7 +617,140 @@ const SPECIES = [
     tod: [0.9, 0.5, 1, 0.6], sol: 0.75, moonlight: 0.1,
     season: { spring: 0.95, summer: 1, autumn: 0.8, winter: 0.35 }, temp: [12, 20, 28, 32],
     seasonNote: { spring: 'Rising water temps fire them up', summer: 'Peak season in rivers and dams', autumn: 'Still feeding as water cools', winter: 'Very slow below 12 °C' },
-    tips: ['Yabbies or shrimp near timber', 'Lipless crankbaits and spinnerbaits hopped through snags in dams', 'A rising river after rain can trigger a hot bite'] }
+    tips: ['Yabbies or shrimp near timber', 'Lipless crankbaits and spinnerbaits hopped through snags in dams', 'A rising river after rain can trigger a hot bite'] },
+  { id: 'brown', name: 'Brown trout', latin: 'Salmo trutta', hab: 'fresh',
+    range: [[35, 71, -25, 60], [33, 62, -130, -60], [-55, -30, -76, -56], [-44, -30, 138, 154], [-47, -34, 166, 179], [-35, -22, 17, 32], [27, 37, 70, 92]], baro: 0.6,
+    geo: { stream: 1, mouth: 0.8, openlake: 0.7, drop: 0.7, snags: 0.7, weed: 0.6, reef: 0.5, rockwall: 0.4, flats: 0.4, jetty: 0.3 },
+    tod: [0.9, 0.4, 1, 0.5], sol: 0.7, moonlight: -0.1,
+    season: { spring: 0.9, summer: 0.6, autumn: 1, winter: 0.5 }, temp: [4, 9, 17, 21],
+    seasonNote: { spring: 'Mayfly and caddis hatches start', summer: 'Evening rise and night fishing for big fish', autumn: 'Pre-spawn browns are aggressive', winter: 'Many rivers closed; lakes still fish' },
+    tips: ['Fish the evening rise and into dark for the big ones', 'Approach from downstream and stay low; browns spook easily', 'Check your local season; many rivers close over winter'] },
+  { id: 'smb', name: 'Smallmouth bass', latin: 'Micropterus dolomieu', hab: 'fresh',
+    range: [[30, 52, -125, -64]], baro: 0.9,
+    geo: { reef: 1, rockwall: 0.9, stream: 0.9, drop: 0.8, openlake: 0.6, snags: 0.6, weed: 0.5, jetty: 0.5, flats: 0.5, mouth: 0.6 },
+    tod: [0.9, 0.6, 0.9, 0.3], sol: 0.8, moonlight: 0.1,
+    season: { spring: 1, summer: 0.85, autumn: 1, winter: 0.4 }, temp: [8, 17, 25, 29],
+    seasonNote: { spring: 'Up on rocky flats around the spawn', summer: 'Rock humps and current seams', autumn: 'Feeding up on baitfish, big fish shallow', winter: 'Deep and slow' },
+    tips: ['Tubes, ned rigs and jerkbaits around rock and gravel', 'In rivers, fish current breaks behind boulders', 'Falling pressure before a front is prime'] },
+  { id: 'striper', name: 'Striped bass', latin: 'Morone saxatilis', hab: 'both',
+    range: [[25, 47, -82, -60], [30, 42, -122, -80], [36, 39, -123.5, -121]], baro: 0.5,
+    swell: [0.5, 1.5], geo: { mouth: 1, surf: 0.9, rockwall: 0.9, drop: 0.8, flats: 0.7, jetty: 0.7, reef: 0.7, openlake: 0.6, stream: 0.6, weed: 0.4 },
+    tod: [1, 0.4, 1, 0.8], sol: 0.8, moonlight: 0.1,
+    season: { spring: 1, summer: 0.7, autumn: 1, winter: 0.5 }, temp: [8, 13, 22, 27],
+    seasonNote: { spring: 'Spring run up the rivers and bays', summer: 'Night fishing and deep structure', autumn: 'Fall run along the beaches', winter: 'Holding in deep, warmer water' },
+    tips: ['Moving water at dawn, dusk and after dark', 'Bucktails, swimbaits or live eels around rips and points', 'Follow the bait: birds diving mean stripers below'] },
+  { id: 'chinook', name: 'Chinook salmon', latin: 'Oncorhynchus tshawytscha', hab: 'both',
+    range: [[36, 70, -170, -115], [41, 49, -93, -75], [-47, -40, 166, 175], [-55, -38, -76, -60]], baro: 0.4,
+    swell: [0, 1.5], geo: { mouth: 1, stream: 1, drop: 0.8, reef: 0.6, openlake: 0.6, rockwall: 0.6, surf: 0.5, jetty: 0.5, flats: 0.3, weed: 0.3 },
+    tod: [1, 0.5, 0.8, 0.2], sol: 0.6, moonlight: 0,
+    season: { spring: 0.6, summer: 0.9, autumn: 1, winter: 0.3 }, temp: [6, 10, 15, 19],
+    seasonNote: { spring: 'Early runs in some rivers', summer: 'Fish staging off river mouths', autumn: 'Main run up the rivers', winter: 'Mostly out at sea' },
+    tips: ['First light at river mouths on an incoming tide', 'Spinners, spoons or trolled flashers', 'Check run timing and rules; many runs are tightly managed'] },
+  { id: 'seabass', name: 'European seabass', latin: 'Dicentrarchus labrax', hab: 'salt',
+    range: [[30, 58, -12, 36]], baro: 0.4,
+    swell: [0.5, 1.8], geo: { surf: 1, rockwall: 1, mouth: 0.9, reef: 0.8, flats: 0.6, jetty: 0.6, drop: 0.5, weed: 0.5, stream: 0.2 },
+    tod: [1, 0.4, 1, 0.6], sol: 0.75, moonlight: 0.1,
+    season: { spring: 0.8, summer: 1, autumn: 1, winter: 0.4 }, temp: [9, 13, 20, 24],
+    seasonNote: { spring: 'Fish move inshore', summer: 'Surf and rocks at dawn and dusk', autumn: 'Best season, big fish in the surf', winter: 'Many move offshore to spawn' },
+    tips: ['Whitewater around rocks and surf on a rising tide', 'Soft plastics, surface lures or peeler crab', 'Many countries have bag limits and closed months; check local rules'] },
+  { id: 'zander', name: 'Zander', latin: 'Sander lucioperca', hab: 'fresh',
+    range: [[42, 64, -5, 60]], baro: 0.8,
+    geo: { drop: 1, reef: 0.8, snags: 0.8, stream: 0.8, jetty: 0.7, openlake: 0.7, rockwall: 0.7, weed: 0.5, flats: 0.4, mouth: 0.6 },
+    tod: [0.9, 0.3, 1, 0.8], sol: 0.8, moonlight: 0.2,
+    season: { spring: 0.7, summer: 0.8, autumn: 1, winter: 0.7 }, temp: [6, 14, 24, 28],
+    seasonNote: { spring: 'Spawning and often protected', summer: 'Low light and night bite', autumn: 'Prime season on drop-offs', winter: 'Deep but still feeding' },
+    tips: ['Dusk into dark on drop-offs and harbour walls', 'Slow soft plastics or dead baits on the bottom', 'Coloured water helps them hunt by day'] },
+  { id: 'wels', name: 'Wels catfish', latin: 'Silurus glanis', hab: 'fresh',
+    range: [[36, 62, -10, 60]], baro: 0.5,
+    geo: { drop: 1, snags: 0.9, stream: 0.9, openlake: 0.6, mouth: 0.6, rockwall: 0.5, weed: 0.4, jetty: 0.4, flats: 0.3, reef: 0.4 },
+    tod: [0.6, 0.3, 0.9, 1], sol: 0.7, moonlight: -0.1,
+    season: { spring: 0.7, summer: 1, autumn: 0.8, winter: 0.3 }, temp: [12, 20, 28, 32],
+    seasonNote: { spring: 'Waking up as water warms', summer: 'Peak season, especially at night', autumn: 'Feeding hard before winter', winter: 'Dormant in deep holes' },
+    tips: ['Deep holes and snags in big rivers after dark', 'Big baits: pellets, squid or live fish', 'Heavy gear; these fish can top 100 kg'] },
+  { id: 'kahawai', name: 'Kahawai / Australian salmon', latin: 'Arripis spp.', hab: 'salt',
+    range: [[-48, -34, 165, 179], [-44, -28, 113, 154]], baro: 0.3,
+    swell: [0.5, 2], geo: { surf: 1, rockwall: 1, mouth: 0.9, reef: 0.7, jetty: 0.6, drop: 0.5, flats: 0.4, weed: 0.3 },
+    tod: [1, 0.6, 0.9, 0.2], sol: 0.7, moonlight: 0,
+    season: { spring: 0.8, summer: 0.9, autumn: 1, winter: 0.8 }, temp: [12, 15, 21, 24],
+    seasonNote: { spring: 'Schools moving along the coast', summer: 'Surface schools in bays and river mouths', autumn: 'Big schools on beaches and rocks', winter: 'Still around in good numbers' },
+    tips: ['Look for birds and boiling surface schools', 'Metal slugs and small poppers cast into the school', 'Bleed them straight away for good eating'] },
+  { id: 'king', name: 'Yellowtail kingfish', latin: 'Seriola lalandi', hab: 'salt',
+    range: [[-44, -23, 112, 154], [-48, -29, 165, 179], [20, 36, -121, -105], [-35, -15, -80, -69], [-35, -26, 15, 33]], baro: 0.3,
+    swell: [0.3, 1.8], geo: { reef: 1, rockwall: 0.9, drop: 0.9, jetty: 0.7, mouth: 0.6, surf: 0.4, flats: 0.3, weed: 0.3 },
+    tod: [1, 0.7, 0.9, 0.2], sol: 0.85, moonlight: 0,
+    season: { spring: 0.8, summer: 1, autumn: 0.9, winter: 0.5 }, temp: [16, 18, 24, 27],
+    seasonNote: { spring: 'Arriving on the inshore reefs', summer: 'Peak season around reefs, wharves and markers', autumn: 'Still hot, big fish around', winter: 'Fewer fish, deeper' },
+    tips: ['Live baits (yellowtail, slimy mackerel) around pinnacles and markers', 'Jigs and stickbaits when they are up on top', 'They run straight for the reef: heavy drag and strong leader'] },
+  { id: 'peacock', name: 'Peacock bass', latin: 'Cichla spp.', hab: 'fresh',
+    range: [[-20, 10, -76, -44], [25, 27, -81, -80]], baro: 0.5,
+    geo: { snags: 1, weed: 0.8, stream: 0.8, openlake: 0.7, drop: 0.6, mouth: 0.6, rockwall: 0.6, jetty: 0.5, flats: 0.5, reef: 0.5 },
+    tod: [0.9, 0.9, 0.8, 0.1], sol: 0.6, moonlight: 0,
+    season: { spring: 0.9, summer: 1, autumn: 1, winter: 0.8 }, temp: [22, 26, 32, 35],
+    seasonNote: { spring: 'Waters falling, fish concentrating', summer: 'Low water, fish packed in lagoons', autumn: 'Prime low-water season', winter: 'Rising water spreads fish out' },
+    tips: ['A daytime sight feeder; mid-morning can be best', 'Big prop baits and jerkbaits along timber and lagoon edges', 'Low-water season is the time to go'] },
+  { id: 'dorado', name: 'Golden dorado', latin: 'Salminus brasiliensis', hab: 'fresh',
+    range: [[-35, -15, -65, -48]], baro: 0.5,
+    geo: { stream: 1, mouth: 0.9, snags: 0.8, drop: 0.8, rockwall: 0.7, openlake: 0.5, weed: 0.5, flats: 0.4, jetty: 0.4, reef: 0.5 },
+    tod: [1, 0.6, 0.9, 0.3], sol: 0.8, moonlight: 0.1,
+    season: { spring: 1, summer: 1, autumn: 0.8, winter: 0.5 }, temp: [16, 20, 28, 32],
+    seasonNote: { spring: 'Season opens, fish aggressive', summer: 'Hot fishing in clear rivers', autumn: 'Still good as water drops', winter: 'Closed or slow in many areas' },
+    tips: ['Fast water, rapids and river junctions', 'Big streamers or minnow lures stripped fast', 'Wire or heavy bite tippet: their teeth are sharp'] },
+  { id: 'jack', name: 'Mangrove jack', latin: 'Lutjanus argentimaculatus', hab: 'salt',
+    range: [[-34, 25, 30, 180]], baro: 0.4,
+    swell: [0, 1], geo: { snags: 1, rockwall: 0.9, mouth: 0.8, drop: 0.8, reef: 0.8, jetty: 0.7, stream: 0.5, flats: 0.3, weed: 0.4, surf: 0.2 },
+    tod: [0.9, 0.5, 1, 0.9], sol: 0.8, moonlight: 0,
+    season: { spring: 0.8, summer: 1, autumn: 0.9, winter: 0.3 }, temp: [20, 24, 30, 33],
+    seasonNote: { spring: 'Waking up as estuaries warm', summer: 'Peak season, especially before storms', autumn: 'Still hungry in warm water', winter: 'Shut down in cool water' },
+    tips: ['Cast hard-bodies and soft plastics tight into snags and rock bars', 'Hot, humid afternoons before a storm are legendary', 'Lock the drag: they bury you in the timber instantly'] },
+  { id: 'spaniard', name: 'Spanish mackerel', latin: 'Scomberomorus commerson', hab: 'salt',
+    range: [[-34, 30, 30, 170]], baro: 0.3,
+    swell: [0.3, 1.5], geo: { reef: 1, rockwall: 0.8, drop: 0.8, jetty: 0.4, mouth: 0.4, surf: 0.3, flats: 0.2 },
+    tod: [1, 0.6, 0.9, 0.2], sol: 0.8, moonlight: 0,
+    season: { spring: 0.7, summer: 0.9, autumn: 1, winter: 0.7 }, temp: [21, 24, 29, 31],
+    seasonNote: { spring: 'Moving down the coast', summer: 'Inshore reefs and headlands', autumn: 'Peak run on the east coast', winter: 'Prime season in the tropics' },
+    tips: ['Troll lures or floating pilchards over reef edges and bait schools', 'Use a short wire trace; their teeth cut everything', 'Tide changes over the reef are the hot times'] },
+  { id: 'mackerel', name: 'Atlantic mackerel', latin: 'Scomber scombrus', hab: 'salt',
+    range: [[35, 72, -25, 30], [35, 52, -76, -52]], baro: 0.3,
+    swell: [0, 1.5], geo: { rockwall: 1, jetty: 0.9, reef: 0.8, drop: 0.7, surf: 0.6, mouth: 0.6, flats: 0.3 },
+    tod: [1, 0.6, 0.9, 0.2], sol: 0.6, moonlight: 0,
+    season: { spring: 0.7, summer: 1, autumn: 0.8, winter: 0.3 }, temp: [8, 11, 18, 22],
+    seasonNote: { spring: 'First shoals arrive inshore', summer: 'Shoals off piers and rocks', autumn: 'Last of the shoals', winter: 'Offshore' },
+    tips: ['Feathers or small metals off piers and rocks', 'Follow diving birds and fizzing bait', 'Great fresh bait for bass, pollack and conger'] },
+  { id: 'pollack', name: 'Pollack', latin: 'Pollachius pollachius', hab: 'salt',
+    range: [[36, 70, -20, 15]], baro: 0.3,
+    swell: [0.3, 1.5], geo: { reef: 1, rockwall: 0.9, drop: 0.9, jetty: 0.5, surf: 0.3, mouth: 0.4 },
+    tod: [1, 0.5, 1, 0.4], sol: 0.75, moonlight: 0,
+    season: { spring: 0.8, summer: 0.9, autumn: 1, winter: 0.6 }, temp: [7, 10, 16, 20],
+    seasonNote: { spring: 'Moving onto inshore reefs', summer: 'Rock marks at dawn and dusk', autumn: 'Best inshore season', winter: 'Big fish on offshore wrecks' },
+    tips: ['Soft plastic eels worked slowly over kelp and reef', 'Low light brings them up off the bottom', 'Deep water close to rocks is the place'] },
+  { id: 'seatrout', name: 'Spotted seatrout', latin: 'Cynoscion nebulosus', hab: 'salt',
+    range: [[24, 40, -98, -74]], baro: 0.5,
+    swell: [0, 0.8], geo: { flats: 1, weed: 1, mouth: 0.8, drop: 0.7, jetty: 0.7, rockwall: 0.5, surf: 0.5, snags: 0.4 },
+    tod: [1, 0.5, 0.9, 0.6], sol: 0.8, moonlight: 0.1,
+    season: { spring: 1, summer: 0.8, autumn: 1, winter: 0.6 }, temp: [10, 18, 27, 31],
+    seasonNote: { spring: 'Back on the grass flats', summer: 'Early mornings and lighted docks at night', autumn: 'Feeding hard on shrimp', winter: 'Deeper holes and creeks' },
+    tips: ['Popping cork with a shrimp over grass flats', 'Topwater at first light for the big "gator" trout', 'Lighted docks after dark in summer'] },
+  { id: 'snook', name: 'Snook', latin: 'Centropomus undecimalis', hab: 'salt',
+    range: [[24, 29, -83, -79], [-28, 25, -98, -34]], baro: 0.4,
+    swell: [0, 1], geo: { mouth: 1, snags: 0.9, jetty: 0.9, rockwall: 0.8, surf: 0.8, flats: 0.7, drop: 0.6, weed: 0.5, stream: 0.4 },
+    tod: [1, 0.4, 1, 0.8], sol: 0.85, moonlight: 0.1,
+    season: { spring: 0.9, summer: 1, autumn: 0.9, winter: 0.4 }, temp: [20, 23, 30, 33],
+    seasonNote: { spring: 'Moving out to the passes and beaches', summer: 'Spawning in passes and on beaches', autumn: 'Moving back into rivers', winter: 'Holding in warm backcountry rivers' },
+    tips: ['Moving tide around bridges, docks and passes', 'Live pilchards or shrimp, or swimbaits at night', 'Very cold-sensitive; check closed seasons'] },
+  { id: 'ling', name: 'Lingcod', latin: 'Ophiodon elongatus', hab: 'salt',
+    range: [[34, 60, -170, -117]], baro: 0.3,
+    swell: [0, 2], geo: { reef: 1, rockwall: 0.9, drop: 0.9, jetty: 0.5, mouth: 0.4 },
+    tod: [0.9, 0.7, 0.9, 0.3], sol: 0.6, moonlight: 0,
+    season: { spring: 0.8, summer: 0.9, autumn: 0.8, winter: 0.8 }, temp: [6, 8, 14, 17],
+    seasonNote: { spring: 'Season opens in many areas', summer: 'Rocky reefs and kelp', autumn: 'Moving shallower', winter: 'Males guard nests; often closed' },
+    tips: ['Heavy jigs and swimbaits bounced along rocky bottom', 'Slack tide over the reef makes it easier to fish', 'Check season and slot limits'] },
+  { id: 'corvina', name: 'Whitemouth croaker (corvina)', latin: 'Micropogonias furnieri', hab: 'salt',
+    range: [[-41, -20, -60, -40]], baro: 0.4,
+    swell: [0.3, 1.5], geo: { surf: 1, mouth: 0.9, flats: 0.7, jetty: 0.7, rockwall: 0.6, drop: 0.6 },
+    tod: [0.9, 0.6, 1, 0.6], sol: 0.8, moonlight: 0,
+    season: { spring: 0.9, summer: 1, autumn: 0.9, winter: 0.5 }, temp: [14, 18, 26, 29],
+    seasonNote: { spring: 'Moving onto the beaches', summer: 'Peak surf and pier season', autumn: 'Still good on the beaches', winter: 'Deeper water' },
+    tips: ['Surf rods with shrimp or crab baits in the gutters', 'Piers and river mouths on a moving tide', 'Dusk is the classic time'] }
 ];
 
 function seasonFor(dateStr, lat) {
@@ -636,10 +771,11 @@ function tempFactor(sp, tC) {
 }
 
 // wx (optional live weather): { pressAt(t), swellAt(t), waterTemp(day, kind) }
-function scoreSpecies(sp, day, wx, geo) {
+function scoreSpecies(sp, day, wx, geo, water) {
+  const kind = sp.hab === 'salt' || (sp.hab === 'both' && water === 'salt') ? 'sea' : 'fresh';
   const [dawn, dayW, dusk, night] = sp.tod;
   const pAt = wx ? day.samples.map(s => wx.pressAt(s.t)) : null;
-  const swAt = wx && sp.hab === 'salt' ? day.samples.map(s => wx.swellAt(s.t)) : null;
+  const swAt = wx && kind === 'sea' ? day.samples.map(s => wx.swellAt(s.t)) : null;
   const acts = day.samples.map((s, i) => {
     const light = clamp((s.sa + 6) / 12, 0, 1);
     let tod = night + (dayW - night) * light;
@@ -656,7 +792,6 @@ function scoreSpecies(sp, day, wx, geo) {
   const top = [...acts].sort((a, b) => b - a).slice(0, 36);
   const topMean = top.reduce((a, b) => a + b, 0) / top.length;
   const season = seasonFor(day.dateStr, day.lat);
-  const kind = sp.hab === 'salt' ? 'sea' : 'fresh';
   const live = wx ? wx.waterTemp(day, kind) : null;
   const tEst = live == null, tVal = tEst ? estWaterTemp(day.lat, day.dateStr, kind) : live;
   const sf = sp.season[season], tf = tempFactor(sp, tVal), gf = geoFit(sp, geo);
@@ -698,25 +833,91 @@ if (typeof module !== 'undefined') module.exports = { GEO, inRange, estWaterTemp
 <script>
 if (typeof document !== 'undefined') (function () {
 const PRESETS = [
-  { n: 'Lake Fork, Texas', lat: 32.88, lng: -95.58, tz: 'America/Chicago', geo: 'snags', water: 'fresh' },
-  { n: 'Lake Okeechobee, Florida', lat: 26.95, lng: -80.80, tz: 'America/New_York', geo: 'weed', water: 'fresh' },
-  { n: 'Lake Erie, Port Clinton, Ohio', lat: 41.51, lng: -82.94, tz: 'America/New_York', geo: 'reef', water: 'fresh' },
-  { n: 'Mille Lacs Lake, Minnesota', lat: 46.23, lng: -93.65, tz: 'America/Chicago', geo: 'reef', water: 'fresh' },
-  { n: 'Galveston Bay, Texas', lat: 29.40, lng: -94.85, tz: 'America/Chicago', geo: 'flats', water: 'salt' },
-  { n: 'Sacramento Delta, California', lat: 38.10, lng: -121.60, tz: 'America/Los_Angeles', geo: 'stream', water: 'all' },
-  { n: 'Puget Sound, Seattle', lat: 47.60, lng: -122.40, tz: 'America/Los_Angeles', geo: 'drop', water: 'salt' },
-  { n: 'Lake Simcoe, Ontario', lat: 44.42, lng: -79.37, tz: 'America/Toronto', geo: 'weed', water: 'fresh' },
-  { n: 'River Thames, Oxford', lat: 51.75, lng: -1.26, tz: 'Europe/London', geo: 'stream', water: 'fresh' },
-  { n: 'Port Phillip Bay, Melbourne', lat: -38.10, lng: 144.85, tz: 'Australia/Melbourne', geo: 'reef', water: 'salt' },
-  { n: 'Botany Bay, Sydney', lat: -34.00, lng: 151.20, tz: 'Australia/Sydney', geo: 'flats', water: 'salt' },
-  { n: 'Moreton Bay, Brisbane', lat: -27.30, lng: 153.25, tz: 'Australia/Brisbane', geo: 'flats', water: 'salt' },
-  { n: 'Darwin Harbour, NT', lat: -12.47, lng: 130.85, tz: 'Australia/Darwin', geo: 'mouth', water: 'salt' },
-  { n: 'Swan River, Perth', lat: -32.00, lng: 115.85, tz: 'Australia/Perth', geo: 'flats', water: 'all' },
-  { n: 'Hawkesbury River, Brooklyn NSW', lat: -33.55, lng: 151.22, tz: 'Australia/Sydney', geo: 'drop', water: 'salt' },
-  { n: 'Lake Macquarie, NSW', lat: -33.05, lng: 151.62, tz: 'Australia/Sydney', geo: 'flats', water: 'salt' },
-  { n: 'Copeton Dam, NSW', lat: -29.90, lng: 150.93, tz: 'Australia/Sydney', geo: 'snags', water: 'fresh' },
-  { n: 'Lake Taupō, New Zealand', lat: -38.78, lng: 175.90, tz: 'Pacific/Auckland', geo: 'openlake', water: 'fresh' }
+  // Australia
+  { r: 'Australia', n: 'Hawkesbury River, Brooklyn NSW', lat: -33.55, lng: 151.22, tz: 'Australia/Sydney', geo: 'drop', water: 'salt' },
+  { r: 'Australia', n: 'Botany Bay, Sydney NSW', lat: -34.00, lng: 151.20, tz: 'Australia/Sydney', geo: 'flats', water: 'salt' },
+  { r: 'Australia', n: 'Sydney Harbour heads NSW', lat: -33.83, lng: 151.29, tz: 'Australia/Sydney', geo: 'rockwall', water: 'salt' },
+  { r: 'Australia', n: 'Lake Macquarie NSW', lat: -33.05, lng: 151.62, tz: 'Australia/Sydney', geo: 'flats', water: 'salt' },
+  { r: 'Australia', n: 'Port Stephens NSW', lat: -32.71, lng: 152.18, tz: 'Australia/Sydney', geo: 'mouth', water: 'salt' },
+  { r: 'Australia', n: 'Clarence River, Yamba NSW', lat: -29.43, lng: 153.36, tz: 'Australia/Sydney', geo: 'mouth', water: 'salt' },
+  { r: 'Australia', n: 'Seven Mile Beach, Lennox Head NSW', lat: -28.79, lng: 153.59, tz: 'Australia/Sydney', geo: 'surf', water: 'salt' },
+  { r: 'Australia', n: 'Copeton Dam NSW', lat: -29.90, lng: 150.93, tz: 'Australia/Sydney', geo: 'snags', water: 'fresh' },
+  { r: 'Australia', n: 'Lake Jindabyne NSW', lat: -36.42, lng: 148.62, tz: 'Australia/Sydney', geo: 'openlake', water: 'fresh' },
+  { r: 'Australia', n: 'Murray River, Mildura VIC', lat: -34.18, lng: 142.16, tz: 'Australia/Melbourne', geo: 'snags', water: 'fresh' },
+  { r: 'Australia', n: 'Lake Eildon VIC', lat: -37.20, lng: 145.93, tz: 'Australia/Melbourne', geo: 'drop', water: 'fresh' },
+  { r: 'Australia', n: 'Port Phillip Bay, Melbourne VIC', lat: -38.10, lng: 144.85, tz: 'Australia/Melbourne', geo: 'reef', water: 'salt' },
+  { r: 'Australia', n: 'Gippsland Lakes VIC', lat: -37.88, lng: 147.97, tz: 'Australia/Melbourne', geo: 'flats', water: 'salt' },
+  { r: 'Australia', n: 'Great Lake TAS', lat: -41.98, lng: 146.72, tz: 'Australia/Hobart', geo: 'openlake', water: 'fresh' },
+  { r: 'Australia', n: 'St Helens, Georges Bay TAS', lat: -41.32, lng: 148.27, tz: 'Australia/Hobart', geo: 'mouth', water: 'salt' },
+  { r: 'Australia', n: 'The Coorong SA', lat: -35.95, lng: 139.40, tz: 'Australia/Adelaide', geo: 'surf', water: 'salt' },
+  { r: 'Australia', n: 'Moreton Bay, Brisbane QLD', lat: -27.30, lng: 153.25, tz: 'Australia/Brisbane', geo: 'flats', water: 'salt' },
+  { r: 'Australia', n: 'Noosa River QLD', lat: -26.38, lng: 153.06, tz: 'Australia/Brisbane', geo: 'flats', water: 'salt' },
+  { r: 'Australia', n: 'Hinchinbrook Channel QLD', lat: -18.40, lng: 146.20, tz: 'Australia/Brisbane', geo: 'mouth', water: 'salt' },
+  { r: 'Australia', n: 'Lake Tinaroo QLD', lat: -17.17, lng: 145.55, tz: 'Australia/Brisbane', geo: 'snags', water: 'fresh' },
+  { r: 'Australia', n: 'Darwin Harbour NT', lat: -12.47, lng: 130.85, tz: 'Australia/Darwin', geo: 'mouth', water: 'salt' },
+  { r: 'Australia', n: 'Shady Camp, Mary River NT', lat: -12.37, lng: 131.70, tz: 'Australia/Darwin', geo: 'snags', water: 'all' },
+  { r: 'Australia', n: 'Swan River, Perth WA', lat: -32.00, lng: 115.85, tz: 'Australia/Perth', geo: 'flats', water: 'all' },
+  { r: 'Australia', n: 'Exmouth Gulf WA', lat: -22.00, lng: 114.20, tz: 'Australia/Perth', geo: 'reef', water: 'salt' },
+  // New Zealand
+  { r: 'New Zealand', n: 'Lake Taupō', lat: -38.78, lng: 175.90, tz: 'Pacific/Auckland', geo: 'openlake', water: 'fresh' },
+  { r: 'New Zealand', n: 'Tongariro River, Tūrangi', lat: -38.99, lng: 175.81, tz: 'Pacific/Auckland', geo: 'stream', water: 'fresh' },
+  { r: 'New Zealand', n: 'Lake Rotorua', lat: -38.08, lng: 176.27, tz: 'Pacific/Auckland', geo: 'openlake', water: 'fresh' },
+  { r: 'New Zealand', n: 'Hauraki Gulf, Auckland', lat: -36.70, lng: 175.00, tz: 'Pacific/Auckland', geo: 'reef', water: 'salt' },
+  { r: 'New Zealand', n: 'Bay of Islands', lat: -35.20, lng: 174.15, tz: 'Pacific/Auckland', geo: 'reef', water: 'salt' },
+  { r: 'New Zealand', n: 'Kaipara Harbour', lat: -36.40, lng: 174.25, tz: 'Pacific/Auckland', geo: 'flats', water: 'salt' },
+  { r: 'New Zealand', n: 'Ninety Mile Beach', lat: -34.85, lng: 173.00, tz: 'Pacific/Auckland', geo: 'surf', water: 'salt' },
+  { r: 'New Zealand', n: 'Marlborough Sounds', lat: -41.15, lng: 174.10, tz: 'Pacific/Auckland', geo: 'drop', water: 'salt' },
+  { r: 'New Zealand', n: 'Rakaia River mouth, Canterbury', lat: -43.90, lng: 172.22, tz: 'Pacific/Auckland', geo: 'mouth', water: 'all' },
+  { r: 'New Zealand', n: 'Lake Wānaka', lat: -44.65, lng: 169.10, tz: 'Pacific/Auckland', geo: 'openlake', water: 'fresh' },
+  { r: 'New Zealand', n: 'Mataura River, Southland', lat: -46.19, lng: 168.86, tz: 'Pacific/Auckland', geo: 'stream', water: 'fresh' },
+  // Europe
+  { r: 'Europe', n: 'River Thames, Oxford, England', lat: 51.75, lng: -1.26, tz: 'Europe/London', geo: 'stream', water: 'fresh' },
+  { r: 'Europe', n: 'River Wye, Wales', lat: 52.06, lng: -2.72, tz: 'Europe/London', geo: 'stream', water: 'fresh' },
+  { r: 'Europe', n: 'Cornwall coast, Newquay, England', lat: 50.42, lng: -5.09, tz: 'Europe/London', geo: 'rockwall', water: 'salt' },
+  { r: 'Europe', n: 'Loch Lomond, Scotland', lat: 56.08, lng: -4.60, tz: 'Europe/London', geo: 'openlake', water: 'fresh' },
+  { r: 'Europe', n: 'Lough Corrib, Ireland', lat: 53.45, lng: -9.30, tz: 'Europe/Dublin', geo: 'openlake', water: 'fresh' },
+  { r: 'Europe', n: 'Brittany coast, Brest, France', lat: 48.38, lng: -4.60, tz: 'Europe/Paris', geo: 'rockwall', water: 'salt' },
+  { r: 'Europe', n: 'Algarve coast, Portugal', lat: 37.08, lng: -8.25, tz: 'Europe/Lisbon', geo: 'surf', water: 'salt' },
+  { r: 'Europe', n: 'River Ebro, Mequinenza, Spain', lat: 41.37, lng: 0.30, tz: 'Europe/Madrid', geo: 'drop', water: 'fresh' },
+  { r: 'Europe', n: 'Hollands Diep, Netherlands', lat: 51.70, lng: 4.50, tz: 'Europe/Amsterdam', geo: 'drop', water: 'fresh' },
+  { r: 'Europe', n: 'Lake Constance (Bodensee)', lat: 47.60, lng: 9.40, tz: 'Europe/Berlin', geo: 'drop', water: 'fresh' },
+  { r: 'Europe', n: 'Lake Balaton, Hungary', lat: 46.85, lng: 17.70, tz: 'Europe/Budapest', geo: 'openlake', water: 'fresh' },
+  { r: 'Europe', n: 'Lake Vänern, Sweden', lat: 58.90, lng: 13.30, tz: 'Europe/Stockholm', geo: 'openlake', water: 'fresh' },
+  { r: 'Europe', n: 'Stockholm archipelago, Sweden', lat: 59.40, lng: 18.70, tz: 'Europe/Stockholm', geo: 'weed', water: 'all' },
+  { r: 'Europe', n: 'Po Delta, Italy', lat: 44.95, lng: 12.40, tz: 'Europe/Rome', geo: 'mouth', water: 'all' },
+  // North America
+  { r: 'North America', n: 'Lake Fork, Texas', lat: 32.88, lng: -95.58, tz: 'America/Chicago', geo: 'snags', water: 'fresh' },
+  { r: 'North America', n: 'Lake Okeechobee, Florida', lat: 26.95, lng: -80.80, tz: 'America/New_York', geo: 'weed', water: 'fresh' },
+  { r: 'North America', n: 'Lake Guntersville, Alabama', lat: 34.42, lng: -86.20, tz: 'America/Chicago', geo: 'weed', water: 'fresh' },
+  { r: 'North America', n: 'Lake Erie, Port Clinton, Ohio', lat: 41.51, lng: -82.94, tz: 'America/New_York', geo: 'reef', water: 'fresh' },
+  { r: 'North America', n: 'Lake Ontario, Oswego, New York', lat: 43.47, lng: -76.52, tz: 'America/New_York', geo: 'drop', water: 'fresh' },
+  { r: 'North America', n: 'Lake Champlain, Vermont', lat: 44.55, lng: -73.33, tz: 'America/New_York', geo: 'weed', water: 'fresh' },
+  { r: 'North America', n: 'Mille Lacs Lake, Minnesota', lat: 46.23, lng: -93.65, tz: 'America/Chicago', geo: 'reef', water: 'fresh' },
+  { r: 'North America', n: 'Lake of the Woods, Ontario', lat: 49.30, lng: -94.80, tz: 'America/Winnipeg', geo: 'reef', water: 'fresh' },
+  { r: 'North America', n: 'Lake Simcoe, Ontario', lat: 44.42, lng: -79.37, tz: 'America/Toronto', geo: 'weed', water: 'fresh' },
+  { r: 'North America', n: 'Lake Powell, Utah–Arizona', lat: 37.07, lng: -111.24, tz: 'America/Denver', geo: 'rockwall', water: 'fresh' },
+  { r: 'North America', n: 'Columbia River, Oregon–Washington', lat: 46.20, lng: -123.30, tz: 'America/Los_Angeles', geo: 'stream', water: 'fresh' },
+  { r: 'North America', n: 'Kenai River, Alaska', lat: 60.55, lng: -151.10, tz: 'America/Anchorage', geo: 'stream', water: 'fresh' },
+  { r: 'North America', n: 'Puget Sound, Seattle', lat: 47.60, lng: -122.40, tz: 'America/Los_Angeles', geo: 'drop', water: 'salt' },
+  { r: 'North America', n: 'Sacramento Delta, California', lat: 38.10, lng: -121.60, tz: 'America/Los_Angeles', geo: 'stream', water: 'fresh' },
+  { r: 'North America', n: 'San Diego kelp beds, California', lat: 32.80, lng: -117.30, tz: 'America/Los_Angeles', geo: 'reef', water: 'salt' },
+  { r: 'North America', n: 'Chesapeake Bay, Maryland', lat: 38.60, lng: -76.40, tz: 'America/New_York', geo: 'flats', water: 'salt' },
+  { r: 'North America', n: 'Cape Cod, Massachusetts', lat: 41.68, lng: -69.95, tz: 'America/New_York', geo: 'surf', water: 'salt' },
+  { r: 'North America', n: 'Outer Banks, North Carolina', lat: 35.25, lng: -75.53, tz: 'America/New_York', geo: 'surf', water: 'salt' },
+  { r: 'North America', n: 'Tampa Bay, Florida', lat: 27.75, lng: -82.60, tz: 'America/New_York', geo: 'flats', water: 'salt' },
+  { r: 'North America', n: 'Galveston Bay, Texas', lat: 29.40, lng: -94.85, tz: 'America/Chicago', geo: 'flats', water: 'salt' },
+  { r: 'North America', n: 'Lake El Salto, Sinaloa, Mexico', lat: 24.45, lng: -106.95, tz: 'America/Mazatlan', geo: 'snags', water: 'fresh' },
+  // South America
+  { r: 'South America', n: 'Río Negro, Manaus, Brazil', lat: -3.05, lng: -60.10, tz: 'America/Manaus', geo: 'snags', water: 'fresh' },
+  { r: 'South America', n: 'Pantanal, Mato Grosso, Brazil', lat: -16.80, lng: -56.80, tz: 'America/Cuiaba', geo: 'stream', water: 'fresh' },
+  { r: 'South America', n: 'Paraná River, Corrientes, Argentina', lat: -27.47, lng: -58.83, tz: 'America/Argentina/Cordoba', geo: 'stream', water: 'fresh' },
+  { r: 'South America', n: 'Río Limay, Patagonia, Argentina', lat: -40.75, lng: -71.05, tz: 'America/Argentina/Salta', geo: 'stream', water: 'fresh' },
+  { r: 'South America', n: 'Río Grande, Tierra del Fuego', lat: -53.78, lng: -67.70, tz: 'America/Argentina/Ushuaia', geo: 'stream', water: 'fresh' },
+  { r: 'South America', n: 'Lago Llanquihue, Chile', lat: -41.15, lng: -72.80, tz: 'America/Santiago', geo: 'openlake', water: 'fresh' },
+  { r: 'South America', n: 'Mar del Plata, Argentina', lat: -38.00, lng: -57.55, tz: 'America/Argentina/Buenos_Aires', geo: 'surf', water: 'salt' },
+  { r: 'South America', n: 'Florianópolis, Brazil', lat: -27.60, lng: -48.45, tz: 'America/Sao_Paulo', geo: 'rockwall', water: 'salt' }
 ];
+const REGIONS = ['Australia', 'New Zealand', 'Europe', 'North America', 'South America'];
 const $ = id => document.getElementById(id);
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
@@ -736,7 +937,7 @@ function spotFor(key) {
 function fillSpots(sel) {
   const mine = state.customs.map((c, i) => `<option value="c:${i}">${esc(c.n)}</option>`).join('');
   $('preset').innerHTML = (mine ? `<optgroup label="Your spots">${mine}</optgroup>` : '') +
-    `<optgroup label="Popular spots">${PRESETS.map((p, i) => `<option value="p:${i}">${esc(p.n)}</option>`).join('')}</optgroup>`;
+    REGIONS.map(r => `<optgroup label="${r}">${PRESETS.map((p, i) => p.r === r ? `<option value="p:${i}">${esc(p.n)}</option>` : '').join('')}</optgroup>`).join('');
   $('preset').value = sel;
 }
 function applySpot(key) {
@@ -756,7 +957,7 @@ function setUnit(u) {
 let startKey = saved.spot && spotFor(saved.spot) ? saved.spot : null;
 if (!startKey) {
   let i = PRESETS.findIndex(p => p.tz === browserTz);
-  if (i < 0) i = PRESETS.findIndex(p => p.tz.split('/')[0] === browserTz.split('/')[0]);
+  if (i < 0) i = PRESETS.findIndex(p => p.tz.split('/')[0] === browserTz.split('/')[0] && !(browserTz.startsWith('America') && p.r === 'South America'));
   startKey = 'p:' + Math.max(0, i);
 }
 fillSpots(startKey);
@@ -765,33 +966,6 @@ if (saved.spot === startKey) { if (saved.geo) $('geo').value = saved.geo; if (sa
 setUnit(state.unit);
 const loc = () => { const s = spotFor($('preset').value); return { lat: s.lat, lng: s.lng, tz: s.tz, name: s.n }; };
 $('date').value = todayIn(loc().tz);
-
-/* ---------- Place search (Open-Meteo geocoding) ---------- */
-$('controls').addEventListener('submit', async e => {
-  e.preventDefault();
-  const q = $('search').value.trim();
-  if (q.length < 2) return;
-  $('results').innerHTML = '<span class="hint">Searching…</span>';
-  try {
-    const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=6&language=en&format=json&name=' + encodeURIComponent(q));
-    const j = await r.json();
-    const hits = (j.results || []).filter(h => h.timezone);
-    $('results').innerHTML = hits.length
-      ? hits.map((h, i) => `<button type="button" data-i="${i}">${esc([h.name, h.admin1, h.country].filter(Boolean).join(', '))}</button>`).join('')
-      : '<span class="hint">No places found. Try a nearby town.</span>';
-    $('results').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
-      const h = hits[+b.dataset.i];
-      state.customs.unshift({ n: [h.name, h.admin1 || h.country].filter(Boolean).join(', '), lat: h.latitude, lng: h.longitude, tz: h.timezone, geo: 'any', water: 'all' });
-      state.customs = state.customs.slice(0, 8);
-      fillSpots('c:0'); applySpot('c:0');
-      $('results').innerHTML = ''; $('search').value = '';
-      $('date').value = todayIn(loc().tz);
-      render();
-    }));
-  } catch (err) {
-    $('results').innerHTML = '<span class="hint">Place search needs the live site. Pick a listed spot for now.</span>';
-  }
-});
 
 /* ---------- Live weather (Open-Meteo forecast + marine) ---------- */
 const WX = {};
@@ -1018,7 +1192,7 @@ function drawConditions(l, day, days, wx, here) {
     : 'Seasonal estimates · live data loads on the hosted site';
   const now = Date.now(), ref = now >= day.start && now < day.end ? now : day.start + 12 * 3600e3;
   const refLbl = ref === now ? 'now' : 'at midday';
-  const salt = here.some(s => s.hab === 'salt'), fresh = here.some(s => s.hab === 'fresh');
+  const salt = state.hab !== 'fresh' && here.some(s => s.hab !== 'fresh'), fresh = state.hab !== 'salt' && here.some(s => s.hab !== 'salt');
   const tiles = [];
   const wt = kind => { const v = wx && wx.waterTemp(day, kind); return v != null ? [fmtT(v), 'live'] : [fmtT(estWaterTemp(l.lat, day.dateStr, kind)), 'seasonal estimate']; };
   if (salt) { const [v, s] = wt('sea'); tiles.push(['Sea temperature', v, s]); }
@@ -1048,7 +1222,7 @@ function drawConditions(l, day, days, wx, here) {
   const focus = SPECIES.find(s => s.id === state.focus);
   const bands = [{ a: day.start, b: day.end, fill: 'var(--accent)', op: 0.08 }];
   const xTicks = days.map(d => ({ t: d.start + 12 * 3600e3, label: dayLabel(d.start + 12 * 3600e3, l.tz) }));
-  const ideal = focus && focus.swell && focus.hab === 'salt' ? focus.swell : null;
+  const ideal = focus && focus.swell && focus.hab !== 'fresh' ? focus.swell : null;
   let ni = 0; T.forEach((t, i) => { if (Math.abs(t - ref) < Math.abs(T[ni] - ref)) ni = i; });
   areaChart(box, {
     t: T, v: V, t0, t1, yMax, yTicks: [0.5, 1, 1.5, 2, 3, 4, 5, 6].filter(v => v <= yMax), fmtY: v => v + ' m',
@@ -1071,6 +1245,98 @@ function drawConditions(l, day, days, wx, here) {
   }
 }
 
+/* ---------- Spot search: suggestions as you type ---------- */
+const WATER_BY_CODE = [
+  [/^(LK|RSV|PND)/, 'fresh', 'openlake'], [/^(STM|RVN|FLLS|RPDS)/, 'fresh', 'stream'],
+  [/^(BCH)/, 'salt', 'surf'], [/^(PT|CAPE|HDLD|CLF)/, 'salt', 'rockwall'], [/^(EST|INLT|CHN)/, 'salt', 'mouth'],
+  [/^(BAY|COVE|HBR|GULF|LGN|SD|BGHT)/, 'salt', 'flats'], [/^(RF)/, 'salt', 'reef']
+];
+let sugg = [], active = -1, seq = 0, timer = null;
+const sIn = $('search'), sBox = $('suggest');
+function showSugg() {
+  if (!sugg.length) { sBox.hidden = true; sIn.setAttribute('aria-expanded', 'false'); sIn.removeAttribute('aria-activedescendant'); return; }
+  sBox.innerHTML = sugg.map((s, i) => `<li role="option" id="sg-${i}" data-i="${i}" aria-selected="${i === active}" class="${s.kind === 'info' ? 'info' : ''}"><span>${esc(s.label)}</span>${s.sub ? `<small>${esc(s.sub)}</small>` : ''}</li>`).join('');
+  sBox.hidden = false;
+  sIn.setAttribute('aria-expanded', 'true');
+  if (active >= 0) { sIn.setAttribute('aria-activedescendant', 'sg-' + active); $('sg-' + active)?.scrollIntoView({ block: 'nearest' }); }
+  else sIn.removeAttribute('aria-activedescendant');
+}
+function localMatches(q) {
+  const ql = q.toLowerCase();
+  const mine = state.customs.map((c, i) => ({ kind: 'spot', key: 'c:' + i, label: c.n, sub: 'Your spot' }));
+  const listed = PRESETS.map((p, i) => ({ kind: 'spot', key: 'p:' + i, label: p.n, sub: p.r + ' · ' + GEO_NAME[p.geo].split(' or ')[0].split(',')[0] }));
+  return [...mine, ...listed].filter(s => s.label.toLowerCase().includes(ql) || s.sub.toLowerCase().startsWith(ql)).slice(0, 6);
+}
+async function remoteMatches(q, my, local) {
+  try {
+    const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=8&language=en&format=json&name=' + encodeURIComponent(q));
+    const j = await r.json();
+    if (my !== seq) return;
+    const hits = (j.results || []).filter(h => h.timezone).map(h => ({
+      kind: 'place', h, label: h.name, sub: [h.admin1, h.country].filter(Boolean).join(', ')
+    })).filter(g => !local.some(l => l.label.toLowerCase().startsWith(g.label.toLowerCase())));
+    sugg = [...local, ...hits].slice(0, 10);
+    if (!sugg.length) sugg = [{ kind: 'info', label: 'No places found', sub: 'Try a nearby town, lake or beach' }];
+  } catch (err) {
+    if (my !== seq) return;
+    sugg = local.length ? local : [{ kind: 'info', label: 'Place search needs the live site', sub: 'Pick a listed spot for now' }];
+  }
+  showSugg();
+}
+sIn.addEventListener('input', () => {
+  const q = sIn.value.trim();
+  clearTimeout(timer);
+  const my = ++seq;
+  active = -1;
+  if (q.length < 2) { sugg = q ? [] : []; showSugg(); return; }
+  const local = localMatches(q);
+  sugg = [...local, { kind: 'info', label: 'Searching places…', sub: '' }];
+  showSugg();
+  timer = setTimeout(() => remoteMatches(q, my, local), 250);
+});
+sIn.addEventListener('focus', () => { if (sIn.value.trim().length >= 2 && sugg.length) showSugg(); });
+sIn.addEventListener('blur', () => setTimeout(() => { sBox.hidden = true; sIn.setAttribute('aria-expanded', 'false'); }, 150));
+sIn.addEventListener('keydown', e => {
+  const pickable = sugg.map((s, i) => s.kind === 'info' ? -1 : i).filter(i => i >= 0);
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    if (!pickable.length) return;
+    e.preventDefault();
+    const pos = pickable.indexOf(active);
+    active = e.key === 'ArrowDown' ? pickable[(pos + 1) % pickable.length] : pickable[(pos - 1 + pickable.length) % pickable.length];
+    showSugg();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    const i = active >= 0 ? active : pickable[0];
+    if (i != null) choose(i);
+  } else if (e.key === 'Escape') {
+    sBox.hidden = true; sIn.setAttribute('aria-expanded', 'false');
+  }
+});
+sBox.addEventListener('mousedown', e => {
+  const li = e.target.closest('li[data-i]');
+  if (!li) return;
+  e.preventDefault();
+  choose(+li.dataset.i);
+});
+function choose(i) {
+  const s = sugg[i];
+  if (!s || s.kind === 'info') return;
+  let key = s.key;
+  if (s.kind === 'place') {
+    const h = s.h, code = h.feature_code || '';
+    const hit = WATER_BY_CODE.find(([re]) => re.test(code));
+    const n = [h.name, h.admin1 || h.country].filter(Boolean).join(', ');
+    state.customs = [{ n, lat: h.latitude, lng: h.longitude, tz: h.timezone, geo: hit ? hit[2] : 'any', water: hit ? hit[1] : 'all' },
+      ...state.customs.filter(c => c.n !== n)].slice(0, 8);
+    key = 'c:0';
+  }
+  fillSpots(key); applySpot(key);
+  sIn.value = ''; sugg = []; showSugg(); sIn.blur();
+  $('date').value = todayIn(loc().tz);
+  render();
+}
+$('controls').addEventListener('submit', e => e.preventDefault());
+
 /* ---------- Events ---------- */
 const shiftDate = n => { $('date').value = addDays($('date').value || todayIn(loc().tz), n); render(); };
 $('prevDay').addEventListener('click', () => shiftDate(-1));
@@ -1090,12 +1356,12 @@ function render() {
   loadWx(l);
   const wx = makeWx(l);
   const here = SPECIES.filter(s => inRange(s, l.lat, l.lng));
-  const shown = here.filter(s => state.hab === 'all' || s.hab === state.hab);
+  const shown = here.filter(s => state.hab === 'all' || s.hab === state.hab || s.hab === 'both');
   const day = computeDay(dateStr, l);
   const days = [...Array(7)].map((_, i) => computeDay(addDays(dateStr, i), l));
 
   // Species scores for the day
-  const list = shown.map(sp => ({ sp, r: scoreSpecies(sp, day, wx, geo) })).sort((a, b) => b.r.score - a.r.score);
+  const list = shown.map(sp => ({ sp, r: scoreSpecies(sp, day, wx, geo, state.hab) })).sort((a, b) => b.r.score - a.r.score);
   if (!list.some(x => x.sp.id === state.focus)) state.focus = list.length ? list[0].sp.id : null;
   $('focus').innerHTML = list.map(({ sp, r }) => `<option value="${sp.id}">${esc(sp.name)} · ${r.score}</option>`).join('');
   if (state.focus) $('focus').value = state.focus;
@@ -1152,7 +1418,7 @@ function render() {
   // Week
   const cellColor = s => `color-mix(in srgb, var(--${ratingOf(s)[1]}) ${Math.round(18 + s * 0.45)}%, transparent)`;
   const head = days.map(dd => `<th class="${dd.dateStr === dateStr ? 'sel' : ''}"><button type="button" data-date="${dd.dateStr}">${dayLabel(dd.start + 12 * 3600e3, l.tz)}</button></th>`).join('');
-  const weekScores = shown.map(sp => days.map(dd => scoreSpecies(sp, dd, wx, geo).score));
+  const weekScores = shown.map(sp => days.map(dd => scoreSpecies(sp, dd, wx, geo, state.hab).score));
   const bestRow = shown.length ? `<tr class="bestrow"><td><b>Best bet</b></td>${days.map((dd, j) => { let bi = 0; weekScores.forEach((r, i) => { if (r[j] > weekScores[bi][j]) bi = i; }); return `<td>${shown[bi].name.split(' (')[0]}</td>`; }).join('')}</tr>` : '';
   const rows = shown.map((sp, si) => `<tr><td>${sp.name}</td>${days.map((dd, j) => { const s = weekScores[si][j]; return `<td><span class="cell" style="background:${cellColor(s)}">${s}</span></td>`; }).join('')}</tr>`).join('');
   const moonRow = `<tr class="moonrow"><td>Moon</td>${days.map(dd => `<td>${phaseInfo(dd.illum.phase).replace(' moon', '')}<br>${'●'.repeat(dd.dayStars)}${'○'.repeat(4 - dd.dayStars)}</td>`).join('')}</tr>`;
