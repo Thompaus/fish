@@ -75,6 +75,15 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .suggest li.info{cursor:default;color:var(--muted)}
 .suggest li.info:hover{background:none}
 .panel{display:flex;flex-direction:column;gap:14px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:10px;min-width:0}
+.go-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin:0 0 14px}
+.go-days button{font:inherit;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:6px 2px 7px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.go-days button:hover{border-color:var(--accent)}
+.go-days button[aria-selected="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--bg))}
+.go-days .wd{font-size:12px;font-weight:600}
+.go-days .dn{font-size:11px;opacity:.7}
+.go-days .sc{font-size:12px;font-weight:700;border-radius:6px;padding:1px 7px;font-variant-numeric:tabular-nums}
+.go-days .best{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);font-weight:700;line-height:1}
+@media (max-width:480px){.go-days{gap:3px}.go-days .dn{display:none}}
 .go-head{display:flex;flex-wrap:wrap;gap:4px 22px;align-items:baseline}
 .go-head .big{font-family:var(--f-display);font-size:26px;font-weight:700}
 .chart-wrap{overflow-x:auto}
@@ -938,7 +947,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   <section aria-labelledby="goTitle" class="panel">
     <div class="sec-head">
       <div>
-        <div class="eyebrow">Hover or drag across the graph</div>
+        <div class="eyebrow">Pick a day, then hover or drag across the graph</div>
         <h2 id="goTitle">When to go</h2>
       </div>
       <div class="field" style="width:min(260px,100%)">
@@ -946,6 +955,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
         <select id="focus"></select>
       </div>
     </div>
+    <div class="go-days" id="goDays" role="tablist" aria-label="Pick a day for this graph"></div>
     <div class="go-head" id="goHead"></div>
     <div class="chart-wrap" id="goChart"></div>
   </section>
@@ -1798,7 +1808,7 @@ const $ = id => document.getElementById(id);
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
 const saved = store.get('solunar-v4') || {};
-const state = { hab: 'all', unit: saved.unit || 'C', focus: null, customs: Array.isArray(saved.customs) ? saved.customs : [] };
+const state = { goDay: 0, goDate: null, hab: 'all', unit: saved.unit || 'C', focus: null, customs: Array.isArray(saved.customs) ? saved.customs : [] };
 const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 const todayIn = tz => { const p = tzParts(Date.now(), tz); return `${p.y}-${String(p.mo).padStart(2, '0')}-${String(p.d).padStart(2, '0')}`; };
 const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
@@ -2033,6 +2043,34 @@ function reasonsAt(day, i, r, sp) {
   if (sw) { const f = swellFactor(sp, sw, $('geo').value); out.push(`Swell ${sw.h.toFixed(1)} m${sw.per ? ' @ ' + Math.round(sw.per) + ' s' : ''}${f ? ', ' + f.note : ''}`); }
   return out;
 }
+// 7 day tabs above the When to go graph: each tab is the same full scoreSpecies run
+// (solunar periods, time of day, moon, season, water temp, spot type, pressure, swell) for that date.
+let goCtx = null;
+function drawGoWeek(days, l, sp, wx, geo, scores) {
+  goCtx = { days, l, sp, wx, geo, scores };
+  const box = $('goDays');
+  if (!sp || !scores) { box.innerHTML = ''; drawGo(days[0], l, null, null); return; }
+  const gd = Math.min(Math.max(state.goDay, 0), days.length - 1);
+  const best = scores.indexOf(Math.max(...scores));
+  const col = s => `color-mix(in srgb, var(--${ratingOf(s)[1]}) ${Math.round(18 + s * 0.45)}%, transparent)`;
+  box.innerHTML = days.map((d, j) => {
+    const mid = new Date(d.start + 12 * 3600e3);
+    const wd = j === 0 && $('date').value === todayIn(l.tz) ? 'Today' : mid.toLocaleDateString('en-GB', { timeZone: l.tz, weekday: 'short' });
+    const dn = mid.toLocaleDateString('en-GB', { timeZone: l.tz, day: 'numeric', month: 'short' });
+    return `<button type="button" role="tab" data-goday="${j}" aria-selected="${j === gd}" aria-label="${wd} ${dn}, ${sp.name} rating ${scores[j]}">
+      <span class="wd">${wd}</span><span class="dn">${dn}</span><span class="sc" style="background:${col(scores[j])}">${scores[j]}</span>${j === best ? '<span class="best">Best</span>' : ''}</button>`;
+  }).join('');
+  const day = days[gd];
+  drawGo(day, l, sp, scoreSpecies(sp, day, wx, geo, state.hab));
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-goday]');
+  if (!b || !goCtx) return;
+  state.goDay = +b.dataset.goday;
+  const c = goCtx; drawGoWeek(c.days, c.l, c.sp, c.wx, c.geo, c.scores);
+  const nb = document.querySelector(`[data-goday="${state.goDay}"]`); if (nb) nb.focus();
+});
+
 function drawGo(day, l, sp, r) {
   if (!sp) { $('goHead').innerHTML = ''; $('goChart').innerHTML = '<p class="nodata">No species to show for this spot.</p>'; return; }
   const topW = r.topW, others = r.windows.filter(w => w !== topW);
@@ -2568,7 +2606,8 @@ function render() {
   const f = list.find(x => x.sp.id === state.focus);
   const weekScores = shown.map(sp => days.map(dd => scoreSpecies(sp, dd, wx, geo, state.hab).score));
   drawHero(l, day, days, list, weekScores, shown, wx, dateStr);
-  drawGo(day, l, f && f.sp, f && f.r);
+  if (state.goDate !== dateStr) { state.goDate = dateStr; state.goDay = 0; }
+  drawGoWeek(days, l, f && f.sp, wx, geo, f ? weekScores[shown.indexOf(f.sp)] : null);
   drawConditions(l, day, days, wx, shown.length ? shown : here);
 
   // Sky
