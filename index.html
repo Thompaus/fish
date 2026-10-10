@@ -924,6 +924,22 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
   <section class="hero" id="hero" aria-live="polite"></section>
 
+  <section aria-labelledby="spTitle" style="display:flex;flex-direction:column;gap:14px">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Ranked for the selected day</div>
+        <h2 id="spTitle">Species outlook</h2>
+      </div>
+      <div class="seg" id="habSeg" role="group" aria-label="Type of water at this spot">
+        <button type="button" data-hab="all" aria-pressed="true">All</button>
+        <button type="button" data-hab="fresh" aria-pressed="false">Freshwater</button>
+        <button type="button" data-hab="salt" aria-pressed="false">Salt &amp; estuary</button>
+      </div>
+    </div>
+    <div class="species" id="species"></div>
+    <div id="others"></div>
+  </section>
+
   <section aria-labelledby="mapTitle" class="panel">
     <div class="sec-head">
       <div>
@@ -1011,21 +1027,6 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <div class="grid-wrap"><table class="week" id="week"></table></div>
   </section>
 
-  <section aria-labelledby="spTitle" style="display:flex;flex-direction:column;gap:14px">
-    <div class="sec-head">
-      <div>
-        <div class="eyebrow">Ranked for the selected day</div>
-        <h2 id="spTitle">Species outlook</h2>
-      </div>
-      <div class="seg" id="habSeg" role="group" aria-label="Type of water at this spot">
-        <button type="button" data-hab="all" aria-pressed="true">All</button>
-        <button type="button" data-hab="fresh" aria-pressed="false">Freshwater</button>
-        <button type="button" data-hab="salt" aria-pressed="false">Salt &amp; estuary</button>
-      </div>
-    </div>
-    <div class="species" id="species"></div>
-    <div id="others"></div>
-  </section>
 
   <details class="method">
     <summary>How the rating works</summary>
