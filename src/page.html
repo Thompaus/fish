@@ -1578,7 +1578,7 @@ if (typeof document !== 'undefined') (function () {
 const PRESETS = [
   // Australia
   { r: 'Australia', n: 'Hawkesbury River, Brooklyn NSW', lat: -33.55, lng: 151.22, tz: 'Australia/Sydney', geo: 'drop', water: 'salt' },
-  { r: 'Australia', n: 'Chipping Norton Lakes, Georges River NSW', lat: -33.912, lng: 150.958, tz: 'Australia/Sydney', geo: 'snags', water: 'all' },
+  { r: 'Australia', n: 'Chipping Norton Lakes, Georges River NSW', lat: -33.912, lng: 150.958, tz: 'Australia/Sydney', geo: 'snags', water: 'all', no: ['spaniard', 'king', 'snapper', 'kahawai', 'trout', 'brown', 'golden'] },
   { r: 'Australia', n: 'Botany Bay, Sydney NSW', lat: -34.00, lng: 151.20, tz: 'Australia/Sydney', geo: 'flats', water: 'salt' },
   { r: 'Australia', n: 'Sydney Harbour heads NSW', lat: -33.83, lng: 151.29, tz: 'Australia/Sydney', geo: 'rockwall', water: 'salt' },
   { r: 'Australia', n: 'Lake Macquarie NSW', lat: -33.05, lng: 151.62, tz: 'Australia/Sydney', geo: 'flats', water: 'salt' },
@@ -1832,7 +1832,7 @@ fillSpots(startKey);
 applySpot(startKey);
 if (saved.spot === startKey) { if (saved.geo) $('geo').value = saved.geo; if (saved.hab) setHab(saved.hab); }
 setUnit(state.unit);
-const loc = () => { const s = spotFor($('preset').value); return { lat: s.lat, lng: s.lng, tz: s.tz, name: s.n }; };
+const loc = () => { const s = spotFor($('preset').value); return { lat: s.lat, lng: s.lng, tz: s.tz, name: s.n, no: s.no }; };
 $('date').value = todayIn(loc().tz);
 
 /* ---------- Live weather (Open-Meteo forecast + marine) ---------- */
@@ -2298,7 +2298,7 @@ let map = null, markers = null, markerDate = null, mapCenterKey = null, clickSpo
 function rateSpot(spot, dateStr) {
   const l = { lat: spot.lat, lng: spot.lng, tz: spot.tz };
   const day = computeDay(dateStr, l), water = spot.water || 'all';
-  const res = SPECIES.filter(s => inRange(s, l.lat, l.lng) && (water === 'all' || s.hab === water || s.hab === 'both'))
+  const res = SPECIES.filter(s => inRange(s, l.lat, l.lng) && !(spot.no || []).includes(s.id) && (water === 'all' || s.hab === water || s.hab === 'both'))
     .map(sp => ({ sp, r: scoreSpecies(sp, day, null, spot.geo || 'any', water) })).sort((a, b) => b.r.score - a.r.score);
   return { day, res };
 }
@@ -2547,7 +2547,7 @@ function render() {
   const wx = makeWx(l);
   loadGbif(l);
   const gb = GB[wxKey(l)], gbN = sp => gb && gb.status === 'ok' ? gbifHit(sp, gb.list) : null;
-  const here = SPECIES.filter(s => inRange(s, l.lat, l.lng) || gbN(s));
+  const here = SPECIES.filter(s => (inRange(s, l.lat, l.lng) || gbN(s)) && !(l.no || []).includes(s.id));
   const shown = here.filter(s => state.hab === 'all' || s.hab === state.hab || s.hab === 'both');
   const day = computeDay(dateStr, l);
   const days = [...Array(7)].map((_, i) => computeDay(addDays(dateStr, i), l));
