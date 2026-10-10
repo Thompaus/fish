@@ -65,7 +65,6 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 .nav:hover{border-color:var(--accent)}
 .linkbtn{align-self:flex-start;border:0;background:none;padding:0;color:var(--accent);font-size:12px;cursor:pointer;text-decoration:underline}
 .empty{padding:16px;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}
-.bestrow td{font-size:12px}
 .btn{flex:none;border:1px solid var(--accent);background:var(--accent);color:var(--surface);border-radius:6px;padding:0 14px;cursor:pointer;font-weight:600}
 .combo{position:relative}
 .suggest{position:absolute;z-index:20;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px color-mix(in srgb,var(--ink) 16%,transparent);max-height:340px;overflow-y:auto}
@@ -151,7 +150,7 @@ table.week thead th button{background:none;border:0;cursor:pointer;color:inherit
 table.week thead th.sel button{color:var(--accent);font-weight:600;text-decoration:underline}
 table.week tbody tr:last-child td{border-bottom:0}
 .cell{display:inline-block;min-width:38px;padding:3px 0;border-radius:4px;font-family:var(--f-mono);font-weight:500;color:var(--ink)}
-.moonrow td{font-size:11.5px;color:var(--muted)}
+.moonrow td{font-size:11.5px;color:var(--muted);border-bottom:2px solid var(--line)}
 
 .method{font-size:14px;max-width:72ch;color:var(--ink)}
 .method p{margin:8px 0}
@@ -2665,10 +2664,9 @@ function render() {
   // Week
   const cellColor = s => `color-mix(in srgb, var(--${ratingOf(s)[1]}) ${Math.round(18 + s * 0.45)}%, transparent)`;
   const head = days.map(dd => `<th class="${dd.dateStr === dateStr ? 'sel' : ''}"><button type="button" data-date="${dd.dateStr}">${dayLabel(dd.start + 12 * 3600e3, l.tz)}</button></th>`).join('');
-  const bestRow = shown.length ? `<tr class="bestrow"><td><b>Best bet</b></td>${days.map((dd, j) => { let bi = 0; weekScores.forEach((r, i) => { if (r[j] > weekScores[bi][j]) bi = i; }); return `<td>${shown[bi].name.split(' (')[0]}</td>`; }).join('')}</tr>` : '';
   const rows = shown.map((sp, si) => `<tr><td>${sp.name}</td>${days.map((dd, j) => { const s = weekScores[si][j]; return `<td><span class="cell" style="background:${cellColor(s)}">${s}</span></td>`; }).join('')}</tr>`).join('');
-  const moonRow = `<tr class="moonrow"><td>Moon</td>${days.map(dd => `<td>${phaseInfo(dd.illum.phase).replace(' moon', '')}<br>${'●'.repeat(dd.dayStars)}${'○'.repeat(4 - dd.dayStars)}</td>`).join('')}</tr>`;
-  $('week').innerHTML = `<thead><tr><th>Species</th>${head}</tr></thead><tbody>${bestRow}${rows}${moonRow}</tbody>`;
+  const moonRow = `<tr class="moonrow"><td>Day rating</td>${days.map(dd => `<td>${phaseInfo(dd.illum.phase).replace(' moon', '')}<br>${'●'.repeat(dd.dayStars)}${'○'.repeat(4 - dd.dayStars)}</td>`).join('')}</tr>`;
+  $('week').innerHTML = `<thead><tr><th>Species</th>${head}</tr></thead><tbody>${moonRow}${rows}</tbody>`;
   $('week').querySelectorAll('button[data-date]').forEach(b => b.addEventListener('click', () => { $('date').value = b.dataset.date; render(); }));
 }
 render();
