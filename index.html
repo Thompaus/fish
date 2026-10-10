@@ -149,6 +149,688 @@ table.week tbody tr:last-child td{border-bottom:0}
 .method summary{font-family:var(--f-display);font-size:18px;color:var(--ink)}
 .err{color:var(--poor);font-size:13px}
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}.card:hover{border-color:var(--accent)}}
+
+/* Leaflet 1.9.4 (BSD-2-Clause) */
+/* required styles */
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	}
+.leaflet-container {
+	overflow: hidden;
+	}
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	-webkit-user-select: none;
+	   -moz-user-select: none;
+	        user-select: none;
+	  -webkit-user-drag: none;
+	}
+/* Prevents IE11 from highlighting tiles in blue */
+.leaflet-tile::selection {
+	background: transparent;
+}
+/* Safari renders non-retina tile on retina better with this, but Chrome is worse */
+.leaflet-safari .leaflet-tile {
+	image-rendering: -webkit-optimize-contrast;
+	}
+/* hack that prevents hw layers "stretching" when loading new tiles */
+.leaflet-safari .leaflet-tile-container {
+	width: 1600px;
+	height: 1600px;
+	-webkit-transform-origin: 0 0;
+	}
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	display: block;
+	}
+/* .leaflet-container svg: reset svg max-width decleration shipped in Joomla! (joomla.org) 3.x */
+/* .leaflet-container img: map is broken in FF if you have max-width: 100% on tiles */
+.leaflet-container .leaflet-overlay-pane svg {
+	max-width: none !important;
+	max-height: none !important;
+	}
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer,
+.leaflet-container .leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+	width: auto;
+	padding: 0;
+	}
+
+.leaflet-container img.leaflet-tile {
+	/* See: https://bugs.chromium.org/p/chromium/issues/detail?id=600120 */
+	mix-blend-mode: plus-lighter;
+}
+
+.leaflet-container.leaflet-touch-zoom {
+	-ms-touch-action: pan-x pan-y;
+	touch-action: pan-x pan-y;
+	}
+.leaflet-container.leaflet-touch-drag {
+	-ms-touch-action: pinch-zoom;
+	/* Fallback for FF which doesn't support pinch-zoom */
+	touch-action: none;
+	touch-action: pinch-zoom;
+}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.leaflet-container {
+	-webkit-tap-highlight-color: transparent;
+}
+.leaflet-container a {
+	-webkit-tap-highlight-color: rgba(51, 181, 229, 0.4);
+}
+.leaflet-tile {
+	filter: inherit;
+	visibility: hidden;
+	}
+.leaflet-tile-loaded {
+	visibility: inherit;
+	}
+.leaflet-zoom-box {
+	width: 0;
+	height: 0;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	z-index: 800;
+	}
+/* workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=888319 */
+.leaflet-overlay-pane svg {
+	-moz-user-select: none;
+	}
+
+.leaflet-pane         { z-index: 400; }
+
+.leaflet-tile-pane    { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-shadow-pane  { z-index: 500; }
+.leaflet-marker-pane  { z-index: 600; }
+.leaflet-tooltip-pane   { z-index: 650; }
+.leaflet-popup-pane   { z-index: 700; }
+
+.leaflet-map-pane canvas { z-index: 100; }
+.leaflet-map-pane svg    { z-index: 200; }
+
+.leaflet-vml-shape {
+	width: 1px;
+	height: 1px;
+	}
+.lvml {
+	behavior: url(#default#VML);
+	display: inline-block;
+	position: absolute;
+	}
+
+
+/* control positioning */
+
+.leaflet-control {
+	position: relative;
+	z-index: 800;
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+.leaflet-top,
+.leaflet-bottom {
+	position: absolute;
+	z-index: 1000;
+	pointer-events: none;
+	}
+.leaflet-top {
+	top: 0;
+	}
+.leaflet-right {
+	right: 0;
+	}
+.leaflet-bottom {
+	bottom: 0;
+	}
+.leaflet-left {
+	left: 0;
+	}
+.leaflet-control {
+	float: left;
+	clear: both;
+	}
+.leaflet-right .leaflet-control {
+	float: right;
+	}
+.leaflet-top .leaflet-control {
+	margin-top: 10px;
+	}
+.leaflet-bottom .leaflet-control {
+	margin-bottom: 10px;
+	}
+.leaflet-left .leaflet-control {
+	margin-left: 10px;
+	}
+.leaflet-right .leaflet-control {
+	margin-right: 10px;
+	}
+
+
+/* zoom and fade animations */
+
+.leaflet-fade-anim .leaflet-popup {
+	opacity: 0;
+	-webkit-transition: opacity 0.2s linear;
+	   -moz-transition: opacity 0.2s linear;
+	        transition: opacity 0.2s linear;
+	}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup {
+	opacity: 1;
+	}
+.leaflet-zoom-animated {
+	-webkit-transform-origin: 0 0;
+	    -ms-transform-origin: 0 0;
+	        transform-origin: 0 0;
+	}
+svg.leaflet-zoom-animated {
+	will-change: transform;
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated {
+	-webkit-transition: -webkit-transform 0.25s cubic-bezier(0,0,0.25,1);
+	   -moz-transition:    -moz-transform 0.25s cubic-bezier(0,0,0.25,1);
+	        transition:         transform 0.25s cubic-bezier(0,0,0.25,1);
+	}
+.leaflet-zoom-anim .leaflet-tile,
+.leaflet-pan-anim .leaflet-tile {
+	-webkit-transition: none;
+	   -moz-transition: none;
+	        transition: none;
+	}
+
+.leaflet-zoom-anim .leaflet-zoom-hide {
+	visibility: hidden;
+	}
+
+
+/* cursors */
+
+.leaflet-interactive {
+	cursor: pointer;
+	}
+.leaflet-grab {
+	cursor: -webkit-grab;
+	cursor:    -moz-grab;
+	cursor:         grab;
+	}
+.leaflet-crosshair,
+.leaflet-crosshair .leaflet-interactive {
+	cursor: crosshair;
+	}
+.leaflet-popup-pane,
+.leaflet-control {
+	cursor: auto;
+	}
+.leaflet-dragging .leaflet-grab,
+.leaflet-dragging .leaflet-grab .leaflet-interactive,
+.leaflet-dragging .leaflet-marker-draggable {
+	cursor: move;
+	cursor: -webkit-grabbing;
+	cursor:    -moz-grabbing;
+	cursor:         grabbing;
+	}
+
+/* marker & overlays interactivity */
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-image-layer,
+.leaflet-pane > svg path,
+.leaflet-tile-container {
+	pointer-events: none;
+	}
+
+.leaflet-marker-icon.leaflet-interactive,
+.leaflet-image-layer.leaflet-interactive,
+.leaflet-pane > svg path.leaflet-interactive,
+svg.leaflet-image-layer.leaflet-interactive path {
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+
+/* visual tweaks */
+
+.leaflet-container {
+	background: #ddd;
+	outline-offset: 1px;
+	}
+.leaflet-container a {
+	color: #0078A8;
+	}
+.leaflet-zoom-box {
+	border: 2px dotted #38f;
+	background: rgba(255,255,255,0.5);
+	}
+
+
+/* general typography */
+.leaflet-container {
+	font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	}
+
+
+/* general toolbar styles */
+
+.leaflet-bar {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+	border-radius: 4px;
+	}
+.leaflet-bar a {
+	background-color: #fff;
+	border-bottom: 1px solid #ccc;
+	width: 26px;
+	height: 26px;
+	line-height: 26px;
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	color: black;
+	}
+.leaflet-bar a,
+.leaflet-control-layers-toggle {
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+	display: block;
+	}
+.leaflet-bar a:hover,
+.leaflet-bar a:focus {
+	background-color: #f4f4f4;
+	}
+.leaflet-bar a:first-child {
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+	}
+.leaflet-bar a:last-child {
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	border-bottom: none;
+	}
+.leaflet-bar a.leaflet-disabled {
+	cursor: default;
+	background-color: #f4f4f4;
+	color: #bbb;
+	}
+
+.leaflet-touch .leaflet-bar a {
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	}
+.leaflet-touch .leaflet-bar a:first-child {
+	border-top-left-radius: 2px;
+	border-top-right-radius: 2px;
+	}
+.leaflet-touch .leaflet-bar a:last-child {
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	}
+
+/* zoom control */
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+	font: bold 18px 'Lucida Console', Monaco, monospace;
+	text-indent: 1px;
+	}
+
+.leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out  {
+	font-size: 22px;
+	}
+
+
+/* layers control */
+
+.leaflet-control-layers {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+	background: #fff;
+	border-radius: 5px;
+	}
+.leaflet-control-layers-toggle {
+	background-image: url(images/layers.png);
+	width: 36px;
+	height: 36px;
+	}
+.leaflet-retina .leaflet-control-layers-toggle {
+	background-image: url(images/layers-2x.png);
+	background-size: 26px 26px;
+	}
+.leaflet-touch .leaflet-control-layers-toggle {
+	width: 44px;
+	height: 44px;
+	}
+.leaflet-control-layers .leaflet-control-layers-list,
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	display: none;
+	}
+.leaflet-control-layers-expanded .leaflet-control-layers-list {
+	display: block;
+	position: relative;
+	}
+.leaflet-control-layers-expanded {
+	padding: 6px 10px 6px 6px;
+	color: #333;
+	background: #fff;
+	}
+.leaflet-control-layers-scrollbar {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	padding-right: 5px;
+	}
+.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+	}
+.leaflet-control-layers label {
+	display: block;
+	font-size: 13px;
+	font-size: 1.08333em;
+	}
+.leaflet-control-layers-separator {
+	height: 0;
+	border-top: 1px solid #ddd;
+	margin: 5px -10px 5px -6px;
+	}
+
+/* Default icon URLs */
+.leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
+	background-image: url(images/marker-icon.png);
+	}
+
+
+/* attribution and scale controls */
+
+.leaflet-container .leaflet-control-attribution {
+	background: #fff;
+	background: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	}
+.leaflet-control-attribution,
+.leaflet-control-scale-line {
+	padding: 0 5px;
+	color: #333;
+	line-height: 1.4;
+	}
+.leaflet-control-attribution a {
+	text-decoration: none;
+	}
+.leaflet-control-attribution a:hover,
+.leaflet-control-attribution a:focus {
+	text-decoration: underline;
+	}
+.leaflet-attribution-flag {
+	display: inline !important;
+	vertical-align: baseline !important;
+	width: 1em;
+	height: 0.6669em;
+	}
+.leaflet-left .leaflet-control-scale {
+	margin-left: 5px;
+	}
+.leaflet-bottom .leaflet-control-scale {
+	margin-bottom: 5px;
+	}
+.leaflet-control-scale-line {
+	border: 2px solid #777;
+	border-top: none;
+	line-height: 1.1;
+	padding: 2px 5px 1px;
+	white-space: nowrap;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	background: rgba(255, 255, 255, 0.8);
+	text-shadow: 1px 1px #fff;
+	}
+.leaflet-control-scale-line:not(:first-child) {
+	border-top: 2px solid #777;
+	border-bottom: none;
+	margin-top: -2px;
+	}
+.leaflet-control-scale-line:not(:first-child):not(:last-child) {
+	border-bottom: 2px solid #777;
+	}
+
+.leaflet-touch .leaflet-control-attribution,
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	box-shadow: none;
+	}
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	border: 2px solid rgba(0,0,0,0.2);
+	background-clip: padding-box;
+	}
+
+
+/* popup */
+
+.leaflet-popup {
+	position: absolute;
+	text-align: center;
+	margin-bottom: 20px;
+	}
+.leaflet-popup-content-wrapper {
+	padding: 1px;
+	text-align: left;
+	border-radius: 12px;
+	}
+.leaflet-popup-content {
+	margin: 13px 24px 13px 20px;
+	line-height: 1.3;
+	font-size: 13px;
+	font-size: 1.08333em;
+	min-height: 1px;
+	}
+.leaflet-popup-content p {
+	margin: 17px 0;
+	margin: 1.3em 0;
+	}
+.leaflet-popup-tip-container {
+	width: 40px;
+	height: 20px;
+	position: absolute;
+	left: 50%;
+	margin-top: -1px;
+	margin-left: -20px;
+	overflow: hidden;
+	pointer-events: none;
+	}
+.leaflet-popup-tip {
+	width: 17px;
+	height: 17px;
+	padding: 1px;
+
+	margin: -10px auto 0;
+	pointer-events: auto;
+
+	-webkit-transform: rotate(45deg);
+	   -moz-transform: rotate(45deg);
+	    -ms-transform: rotate(45deg);
+	        transform: rotate(45deg);
+	}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+	background: white;
+	color: #333;
+	box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+	}
+.leaflet-container a.leaflet-popup-close-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: none;
+	text-align: center;
+	width: 24px;
+	height: 24px;
+	font: 16px/24px Tahoma, Verdana, sans-serif;
+	color: #757575;
+	text-decoration: none;
+	background: transparent;
+	}
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:focus {
+	color: #585858;
+	}
+.leaflet-popup-scrolled {
+	overflow: auto;
+	}
+
+.leaflet-oldie .leaflet-popup-content-wrapper {
+	-ms-zoom: 1;
+	}
+.leaflet-oldie .leaflet-popup-tip {
+	width: 24px;
+	margin: 0 auto;
+
+	-ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)";
+	filter: progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678);
+	}
+
+.leaflet-oldie .leaflet-control-zoom,
+.leaflet-oldie .leaflet-control-layers,
+.leaflet-oldie .leaflet-popup-content-wrapper,
+.leaflet-oldie .leaflet-popup-tip {
+	border: 1px solid #999;
+	}
+
+
+/* div icon */
+
+.leaflet-div-icon {
+	background: #fff;
+	border: 1px solid #666;
+	}
+
+
+/* Tooltip */
+/* Base styles for the element that has a tooltip */
+.leaflet-tooltip {
+	position: absolute;
+	padding: 6px;
+	background-color: #fff;
+	border: 1px solid #fff;
+	border-radius: 3px;
+	color: #222;
+	white-space: nowrap;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	pointer-events: none;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+	}
+.leaflet-tooltip.leaflet-interactive {
+	cursor: pointer;
+	pointer-events: auto;
+	}
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	position: absolute;
+	pointer-events: none;
+	border: 6px solid transparent;
+	background: transparent;
+	content: "";
+	}
+
+/* Directions */
+
+.leaflet-tooltip-bottom {
+	margin-top: 6px;
+}
+.leaflet-tooltip-top {
+	margin-top: -6px;
+}
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-top:before {
+	left: 50%;
+	margin-left: -6px;
+	}
+.leaflet-tooltip-top:before {
+	bottom: 0;
+	margin-bottom: -12px;
+	border-top-color: #fff;
+	}
+.leaflet-tooltip-bottom:before {
+	top: 0;
+	margin-top: -12px;
+	margin-left: -6px;
+	border-bottom-color: #fff;
+	}
+.leaflet-tooltip-left {
+	margin-left: -6px;
+}
+.leaflet-tooltip-right {
+	margin-left: 6px;
+}
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	top: 50%;
+	margin-top: -6px;
+	}
+.leaflet-tooltip-left:before {
+	right: 0;
+	margin-right: -12px;
+	border-left-color: #fff;
+	}
+.leaflet-tooltip-right:before {
+	left: 0;
+	margin-left: -12px;
+	border-right-color: #fff;
+	}
+
+/* Printing */
+
+@media print {
+	/* Prevent printers from removing background-images of controls. */
+	.leaflet-control {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		}
+	}
+
+.map{height:min(480px,70vh);border-radius:8px;border:1px solid var(--line);background:var(--bg);z-index:0}
+.map .leaflet-container,.leaflet-container{font:inherit;background:var(--bg)}
+.mk{stroke:var(--surface);fill-opacity:.95}
+.mk-excellent{fill:var(--excellent)} .mk-good{fill:var(--good)} .mk-fair{fill:var(--fair)} .mk-poor{fill:var(--poor)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip,.leaflet-tooltip{background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 6px 18px color-mix(in srgb,var(--ink) 16%,transparent)}
+.leaflet-popup-content{margin:12px 14px;font-size:13px;line-height:1.4}
+.pop ul{list-style:none;margin:8px 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.pop li{display:grid;grid-template-columns:1fr auto;gap:0 10px}
+.pop li small{grid-column:1/-1;color:var(--muted);font-family:var(--f-mono);font-size:11.5px}
+.pop-t{font-family:var(--f-display);font-size:16px}
+.pop-wx{margin:4px 0 8px;font-family:var(--f-mono);font-size:12px;color:var(--ink)}
+.pop-btn{margin-top:4px;width:100%;border:1px solid var(--accent);background:var(--accent);color:var(--surface);border-radius:6px;padding:6px 10px;font-weight:600;cursor:pointer}
+.legend-dots{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);align-items:center}
+.legend-dots i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.others{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.others li{display:flex;flex-direction:column;gap:1px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);min-width:0}
+.others small{color:var(--muted);font-size:12px}
+#others{display:flex;flex-direction:column;gap:12px}
 </style>
 </head>
 <body>
@@ -187,6 +869,22 @@ table.week tbody tr:last-child td{border-bottom:0}
       <button type="button" class="linkbtn" id="todayBtn">Back to today</button>
     </div>
   </form>
+
+  <section aria-labelledby="mapTitle" class="panel">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Tap anywhere for that spot's rating on the picked date</div>
+        <h2 id="mapTitle">Fishing map</h2>
+      </div>
+      <div class="legend-dots" aria-label="Rating colours">
+        <span><i style="background:var(--excellent)"></i>Excellent</span>
+        <span><i style="background:var(--good)"></i>Good</span>
+        <span><i style="background:var(--fair)"></i>Fair</span>
+        <span><i style="background:var(--poor)"></i>Poor</span>
+      </div>
+    </div>
+    <div id="map" class="map" role="application" aria-label="Map of fishing spots"></div>
+  </section>
 
   <section aria-labelledby="goTitle" class="panel">
     <div class="sec-head">
@@ -268,6 +966,7 @@ table.week tbody tr:last-child td{border-bottom:0}
       </div>
     </div>
     <div class="species" id="species"></div>
+    <div id="others"></div>
   </section>
 
   <details class="method">
@@ -279,11 +978,14 @@ table.week tbody tr:last-child td{border-bottom:0}
     <p><b>Where they live.</b> Each species carries its known range, native and introduced, including small or rare populations. Only species found at your coordinates are listed.</p>
     <p><b>Live conditions.</b> Water temperature, air (barometric) pressure, its trend and the swell all come from the Open-Meteo forecast for the spot, hour by hour, up to about two weeks ahead. Sea temperature is the forecast surface temperature; lakes and rivers use the last 30 days of air temperature, which water follows closely. When live data isn't available (too far ahead, or the preview page), the rating falls back to a seasonal estimate and says so.</p>
     <p><b>Swell.</b> Each saltwater species has a swell range it likes: tailor and mulloway want some whitewater, snapper a moderate sea, flathead and bream calm water. How much swell matters depends on the spot: a lot on a surf beach or rock wall, little up an estuary, not at all in fresh water. Big swell on exposed rocks is flagged as dangerous.</p>
-    <p><b>Air pressure.</b> Fish feel pressure changes through their swim bladder. A falling barometer before a front often triggers a feeding spell, steady pressure is normal, and the clear, rising high after a front usually slows the bite. Species that live shallow in fresh water (bass, pike, walleye) react most; saltwater fish follow the tide more than the barometer. The page reads the trend from the change over the previous three hours.</p>
+    <p><b>Air and barometric pressure.</b> Fish feel pressure changes through their swim bladder. A falling barometer before a front often triggers a feeding spell, steady pressure is normal, and the clear, rising high after a front usually slows the bite. Species that live shallow in fresh water (bass, pike, walleye) react most; saltwater fish follow the tide more than the barometer. The page reads the trend from the change over the previous three hours.</p>
+    <p><b>Every fish recorded at a spot.</b> The page asks GBIF, the Global Biodiversity Information Facility, for every ray-finned fish recorded within about 30 km. Species in the guide get their own card (and show up even outside their usual range if they've been recorded there). Everything else is listed with a general rating built from the moon, sun, pressure and season.</p>
+    <p><b>The map.</b> Coloured dots are the listed spots, rated for the picked date from the moon, sun, season and each spot's species. Tap anywhere else for a quick rating there, then open the full forecast with live weather.</p>
     <p><b>The number.</b> The rating blends the best two-hour stretch of the day with the overall quality of the top six hours, then scales by season, spot type and water temperature. Pressure and swell are applied hour by hour, so they move the best windows as well as the score. 75 and up is excellent, 55 good, 35 fair. It is a planning guide, not a promise; weather fronts, pressure, wind and tides (for salt water) also matter and aren't included yet.</p>
   </details>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
 /* ---------------- Astronomy (after V. Agafonkin's SunCalc, based on Meeus) ---------------- */
 const RAD = Math.PI / 180, DAY_MS = 86400000, J1970 = 2440588, J2000 = 2451545, OBL = RAD * 23.4397;
@@ -520,7 +1222,7 @@ const SPECIES = [
     season: { spring: 0.8, summer: 1, autumn: 0.75, winter: 0.35 }, temp: [10, 21, 29, 33],
     seasonNote: { spring: 'Moving up rivers as water warms', summer: 'Peak season, night bite is strongest', autumn: 'Feeding heavily before cooling', winter: 'Sluggish in deep holes' },
     tips: ['Night fishing beats day; darker moonless nights are often better', 'Cut bait or stink bait on the bottom near holes and current seams', 'A rise after rain brings them out to feed'] },
-  { id: 'crappie', name: 'Crappie', latin: 'Pomoxis spp.', hab: 'fresh',
+  { id: 'crappie', name: 'Crappie', latin: 'Pomoxis spp.', alt: ['Pomoxis annularis', 'Pomoxis nigromaculatus'], hab: 'fresh',
     range: [[25, 52, -125, -66]], baro: 0.8,
     geo: { snags: 1, jetty: 1, weed: 0.7, drop: 0.7, openlake: 0.4, stream: 0.4, mouth: 0.4, flats: 0.3, reef: 0.3, rockwall: 0.3 },
     tod: [0.9, 0.5, 1, 0.6], sol: 0.75, moonlight: 0.2,
@@ -548,7 +1250,7 @@ const SPECIES = [
     season: { spring: 0.85, summer: 1, autumn: 0.85, winter: 0.35 }, temp: [20, 26, 32, 35],
     seasonNote: { spring: 'Build-up season, fish start firing', summer: 'Wet season run-off, peak action', autumn: 'Run-off season, creek mouths fire', winter: 'Cool water shuts them down' },
     tips: ['Fish creek mouths and drains on the run-out tide', 'Big tides around new and full moon line up with the best barra days', 'Hard-bodied lures and soft vibes worked slow along snags'] },
-  { id: 'snapper', name: 'Snapper', latin: 'Chrysophrys auratus', hab: 'salt',
+  { id: 'snapper', name: 'Snapper', latin: 'Chrysophrys auratus', alt: ['Pagrus auratus'], hab: 'salt',
     range: [[-44, -20, 112, 154], [-48, -34, 165, 179]], baro: 0.3,
     swell: [0.5, 1.5], geo: { reef: 1, rockwall: 0.8, drop: 0.8, mouth: 0.6, jetty: 0.5, weed: 0.4, flats: 0.3, surf: 0.3, snags: 0.3, stream: 0 },
     tod: [1, 0.5, 0.95, 0.6], sol: 0.9, moonlight: 0.1,
@@ -597,7 +1299,7 @@ const SPECIES = [
     season: { spring: 0.15, summer: 1, autumn: 0.9, winter: 0.6 }, temp: [10, 16, 26, 30],
     seasonNote: { spring: 'Closed season 1 Sep to 30 Nov in most waters; leave them to spawn', summer: 'Opening season, fish are aggressive', autumn: 'Strong bite as water cools', winter: 'Slow but the biggest fish are caught now' },
     tips: ['Big snags in deep holes on the outside of river bends', 'Spinnerbaits and big hardbodies slow-rolled through the timber; surface lures at night in summer', 'Check your state rules for closed season, size and bag limits'] },
-  { id: 'abass', name: 'Australian bass', latin: 'Percalates novemaculeata', hab: 'fresh',
+  { id: 'abass', name: 'Australian bass', latin: 'Percalates novemaculeata', alt: ['Macquaria novemaculeata'], hab: 'fresh',
     range: [[-38.5, -24.5, 145.5, 154]], baro: 0.75,
     geo: { snags: 1, stream: 0.9, weed: 0.8, openlake: 0.6, drop: 0.6, mouth: 0.5, jetty: 0.4, flats: 0.3, rockwall: 0.4, reef: 0.3 },
     tod: [0.95, 0.4, 1, 0.7], sol: 0.75, moonlight: 0.2,
@@ -915,7 +1617,131 @@ const PRESETS = [
   { r: 'South America', n: 'Río Grande, Tierra del Fuego', lat: -53.78, lng: -67.70, tz: 'America/Argentina/Ushuaia', geo: 'stream', water: 'fresh' },
   { r: 'South America', n: 'Lago Llanquihue, Chile', lat: -41.15, lng: -72.80, tz: 'America/Santiago', geo: 'openlake', water: 'fresh' },
   { r: 'South America', n: 'Mar del Plata, Argentina', lat: -38.00, lng: -57.55, tz: 'America/Argentina/Buenos_Aires', geo: 'surf', water: 'salt' },
-  { r: 'South America', n: 'Florianópolis, Brazil', lat: -27.60, lng: -48.45, tz: 'America/Sao_Paulo', geo: 'rockwall', water: 'salt' }
+  { r: 'South America', n: 'Florianópolis, Brazil', lat: -27.60, lng: -48.45, tz: 'America/Sao_Paulo', geo: 'rockwall', water: 'salt' },
+  { r: 'Australia', n: 'Jervis Bay NSW', lat: -35.06, lng: 150.73, tz: 'Australia/Sydney', geo: 'reef', water: 'salt' },
+  { r: 'Australia', n: 'Shoalhaven River, Nowra NSW', lat: -34.88, lng: 150.75, tz: 'Australia/Sydney', geo: 'mouth', water: 'salt' },
+  { r: 'Australia', n: 'Tuross Lake NSW', lat: -36.06, lng: 150.12, tz: 'Australia/Sydney', geo: 'flats', water: 'salt' },
+  { r: 'Australia', n: 'Merimbula NSW', lat: -36.89, lng: 149.91, tz: 'Australia/Sydney', geo: 'flats', water: 'salt' },
+  { r: 'Australia', n: 'Tweed River NSW', lat: -28.17, lng: 153.55, tz: 'Australia/Sydney', geo: 'mouth', water: 'salt' },
+  { r: 'Australia', n: 'Coffs Harbour NSW', lat: -30.30, lng: 153.14, tz: 'Australia/Sydney', geo: 'rockwall', water: 'salt' },
+  { r: 'Australia', n: 'Lake Burrendong NSW', lat: -32.67, lng: 149.10, tz: 'Australia/Sydney', geo: 'snags', water: 'fresh' },
+  { r: 'Australia', n: 'Burrinjuck Dam NSW', lat: -35.00, lng: 148.60, tz: 'Australia/Sydney', geo: 'snags', water: 'fresh' },
+  { r: 'Australia', n: 'Eucumbene Dam NSW', lat: -36.10, lng: 148.70, tz: 'Australia/Sydney', geo: 'openlake', water: 'fresh' },
+  { r: 'Australia', n: 'Lake Mulwala NSW', lat: -35.98, lng: 146.00, tz: 'Australia/Sydney', geo: 'snags', water: 'fresh' },
+  { r: 'Australia', n: 'Gold Coast Seaway QLD', lat: -27.94, lng: 153.43, tz: 'Australia/Brisbane', geo: 'rockwall', water: 'salt' },
+  { r: 'Australia', n: "Fraser Island (K'gari) QLD", lat: -25.25, lng: 153.25, tz: 'Australia/Brisbane', geo: 'surf', water: 'salt' },
+  { r: 'Australia', n: 'Hervey Bay QLD', lat: -25.20, lng: 152.90, tz: 'Australia/Brisbane', geo: 'flats', water: 'salt' },
+  { r: 'Australia', n: 'Lake Somerset QLD', lat: -27.10, lng: 152.55, tz: 'Australia/Brisbane', geo: 'snags', water: 'fresh' },
+  { r: 'Australia', n: 'Lake Monduran QLD', lat: -24.90, lng: 151.85, tz: 'Australia/Brisbane', geo: 'snags', water: 'fresh' },
+  { r: 'Australia', n: 'Fitzroy River, Rockhampton QLD', lat: -23.38, lng: 150.52, tz: 'Australia/Brisbane', geo: 'mouth', water: 'all' },
+  { r: 'Australia', n: 'Whitsundays QLD', lat: -20.27, lng: 148.95, tz: 'Australia/Brisbane', geo: 'reef', water: 'salt' },
+  { r: 'Australia', n: 'Townsville QLD', lat: -19.25, lng: 146.82, tz: 'Australia/Brisbane', geo: 'reef', water: 'salt' },
+  { r: 'Australia', n: 'Cairns Inlet QLD', lat: -16.92, lng: 145.78, tz: 'Australia/Brisbane', geo: 'mouth', water: 'salt' },
+  { r: 'Australia', n: 'Weipa QLD', lat: -12.63, lng: 141.87, tz: 'Australia/Brisbane', geo: 'mouth', water: 'salt' },
+  { r: 'Australia', n: 'Port Fairy VIC', lat: -38.38, lng: 142.25, tz: 'Australia/Melbourne', geo: 'rockwall', water: 'salt' },
+  { r: 'Australia', n: 'Western Port VIC', lat: -38.40, lng: 145.30, tz: 'Australia/Melbourne', geo: 'flats', water: 'salt' },
+  { r: 'Australia', n: 'Mallacoota VIC', lat: -37.56, lng: 149.75, tz: 'Australia/Melbourne', geo: 'mouth', water: 'salt' },
+  { r: 'Australia', n: 'Dartmouth Dam VIC', lat: -36.55, lng: 147.50, tz: 'Australia/Melbourne', geo: 'drop', water: 'fresh' },
+  { r: 'Australia', n: 'Lake Hume VIC', lat: -36.10, lng: 147.00, tz: 'Australia/Melbourne', geo: 'snags', water: 'fresh' },
+  { r: 'Australia', n: 'Derwent River, Hobart TAS', lat: -42.90, lng: 147.35, tz: 'Australia/Hobart', geo: 'drop', water: 'salt' },
+  { r: 'Australia', n: 'Arthurs Lake TAS', lat: -41.98, lng: 146.85, tz: 'Australia/Hobart', geo: 'openlake', water: 'fresh' },
+  { r: 'Australia', n: 'Port Lincoln SA', lat: -34.72, lng: 135.87, tz: 'Australia/Adelaide', geo: 'reef', water: 'salt' },
+  { r: 'Australia', n: 'Spencer Gulf, Whyalla SA', lat: -33.03, lng: 137.58, tz: 'Australia/Adelaide', geo: 'reef', water: 'salt' },
+  { r: 'Australia', n: 'Kangaroo Island SA', lat: -35.80, lng: 137.20, tz: 'Australia/Adelaide', geo: 'rockwall', water: 'salt' },
+  { r: 'Australia', n: 'Rottnest Island WA', lat: -32.00, lng: 115.50, tz: 'Australia/Perth', geo: 'reef', water: 'salt' },
+  { r: 'Australia', n: 'Mandurah WA', lat: -32.53, lng: 115.72, tz: 'Australia/Perth', geo: 'mouth', water: 'salt' },
+  { r: 'Australia', n: 'Augusta, Blackwood River WA', lat: -34.31, lng: 115.16, tz: 'Australia/Perth', geo: 'mouth', water: 'salt' },
+  { r: 'Australia', n: 'Esperance WA', lat: -33.86, lng: 121.89, tz: 'Australia/Perth', geo: 'surf', water: 'salt' },
+  { r: 'Australia', n: 'Shark Bay WA', lat: -25.90, lng: 113.70, tz: 'Australia/Perth', geo: 'flats', water: 'salt' },
+  { r: 'Australia', n: 'Broome WA', lat: -17.95, lng: 122.23, tz: 'Australia/Perth', geo: 'flats', water: 'salt' },
+  { r: 'Australia', n: 'Ord River, Kununurra WA', lat: -15.77, lng: 128.73, tz: 'Australia/Perth', geo: 'snags', water: 'all' },
+  { r: 'Australia', n: 'Daly River NT', lat: -13.75, lng: 130.70, tz: 'Australia/Darwin', geo: 'snags', water: 'all' },
+  { r: 'New Zealand', n: 'Tauranga Harbour', lat: -37.65, lng: 176.15, tz: 'Pacific/Auckland', geo: 'flats', water: 'salt' },
+  { r: 'New Zealand', n: 'Coromandel, Mercury Bay', lat: -36.83, lng: 175.75, tz: 'Pacific/Auckland', geo: 'reef', water: 'salt' },
+  { r: 'New Zealand', n: 'White Island (Whakaari)', lat: -37.52, lng: 177.18, tz: 'Pacific/Auckland', geo: 'reef', water: 'salt' },
+  { r: 'New Zealand', n: 'Gisborne', lat: -38.68, lng: 178.02, tz: 'Pacific/Auckland', geo: 'rockwall', water: 'salt' },
+  { r: 'New Zealand', n: 'Napier, Hawke Bay', lat: -39.49, lng: 176.92, tz: 'Pacific/Auckland', geo: 'surf', water: 'salt' },
+  { r: 'New Zealand', n: 'New Plymouth', lat: -39.05, lng: 174.07, tz: 'Pacific/Auckland', geo: 'rockwall', water: 'salt' },
+  { r: 'New Zealand', n: 'Wellington Harbour', lat: -41.29, lng: 174.80, tz: 'Pacific/Auckland', geo: 'drop', water: 'salt' },
+  { r: 'New Zealand', n: 'Kapiti Coast', lat: -40.90, lng: 175.00, tz: 'Pacific/Auckland', geo: 'surf', water: 'salt' },
+  { r: 'New Zealand', n: 'Nelson, Tasman Bay', lat: -41.25, lng: 173.25, tz: 'Pacific/Auckland', geo: 'flats', water: 'salt' },
+  { r: 'New Zealand', n: 'Kaikōura', lat: -42.40, lng: 173.70, tz: 'Pacific/Auckland', geo: 'drop', water: 'salt' },
+  { r: 'New Zealand', n: 'Akaroa Harbour', lat: -43.80, lng: 172.95, tz: 'Pacific/Auckland', geo: 'drop', water: 'salt' },
+  { r: 'New Zealand', n: 'Otago Harbour, Dunedin', lat: -45.83, lng: 170.62, tz: 'Pacific/Auckland', geo: 'flats', water: 'salt' },
+  { r: 'New Zealand', n: 'Stewart Island', lat: -46.90, lng: 168.12, tz: 'Pacific/Auckland', geo: 'reef', water: 'salt' },
+  { r: 'New Zealand', n: 'Fiordland, Milford Sound', lat: -44.60, lng: 167.85, tz: 'Pacific/Auckland', geo: 'drop', water: 'salt' },
+  { r: 'New Zealand', n: 'Lake Rotoiti (Rotorua)', lat: -38.04, lng: 176.42, tz: 'Pacific/Auckland', geo: 'openlake', water: 'fresh' },
+  { r: 'New Zealand', n: 'Lake Tarawera', lat: -38.20, lng: 176.43, tz: 'Pacific/Auckland', geo: 'openlake', water: 'fresh' },
+  { r: 'New Zealand', n: 'Waikato River, Hamilton', lat: -37.78, lng: 175.28, tz: 'Pacific/Auckland', geo: 'stream', water: 'fresh' },
+  { r: 'New Zealand', n: 'Rangitīkei River', lat: -39.80, lng: 175.70, tz: 'Pacific/Auckland', geo: 'stream', water: 'fresh' },
+  { r: 'New Zealand', n: 'Lake Brunner', lat: -42.62, lng: 171.45, tz: 'Pacific/Auckland', geo: 'openlake', water: 'fresh' },
+  { r: 'New Zealand', n: 'Waimakariri River', lat: -43.40, lng: 172.70, tz: 'Pacific/Auckland', geo: 'mouth', water: 'all' },
+  { r: 'New Zealand', n: 'Lake Benmore', lat: -44.40, lng: 170.20, tz: 'Pacific/Auckland', geo: 'openlake', water: 'fresh' },
+  { r: 'New Zealand', n: 'Lake Wakatipu, Queenstown', lat: -45.05, lng: 168.65, tz: 'Pacific/Auckland', geo: 'openlake', water: 'fresh' },
+  { r: 'New Zealand', n: 'Clutha River', lat: -46.20, lng: 169.60, tz: 'Pacific/Auckland', geo: 'stream', water: 'fresh' },
+  { r: 'New Zealand', n: 'Lake Te Anau', lat: -45.40, lng: 167.70, tz: 'Pacific/Auckland', geo: 'openlake', water: 'fresh' },
+  { r: 'North America', n: 'Florida Keys, Islamorada', lat: 24.92, lng: -80.63, tz: 'America/New_York', geo: 'flats', water: 'salt' },
+  { r: 'North America', n: 'Everglades, Flamingo, Florida', lat: 25.14, lng: -80.92, tz: 'America/New_York', geo: 'mouth', water: 'salt' },
+  { r: 'North America', n: 'Mosquito Lagoon, Florida', lat: 28.85, lng: -80.80, tz: 'America/New_York', geo: 'flats', water: 'salt' },
+  { r: 'North America', n: 'St Johns River, Florida', lat: 29.40, lng: -81.60, tz: 'America/New_York', geo: 'weed', water: 'fresh' },
+  { r: 'North America', n: 'Charleston Harbor, South Carolina', lat: 32.75, lng: -79.88, tz: 'America/New_York', geo: 'flats', water: 'salt' },
+  { r: 'North America', n: 'Santee Cooper Lakes, South Carolina', lat: 33.45, lng: -80.20, tz: 'America/New_York', geo: 'snags', water: 'fresh' },
+  { r: 'North America', n: 'Lake Lanier, Georgia', lat: 34.20, lng: -83.95, tz: 'America/New_York', geo: 'drop', water: 'fresh' },
+  { r: 'North America', n: 'Kentucky Lake, Kentucky–Tennessee', lat: 36.60, lng: -88.10, tz: 'America/Chicago', geo: 'drop', water: 'fresh' },
+  { r: 'North America', n: 'Table Rock Lake, Missouri', lat: 36.60, lng: -93.40, tz: 'America/Chicago', geo: 'drop', water: 'fresh' },
+  { r: 'North America', n: 'Lake of the Ozarks, Missouri', lat: 38.15, lng: -92.70, tz: 'America/Chicago', geo: 'jetty', water: 'fresh' },
+  { r: 'North America', n: 'Toledo Bend, Texas–Louisiana', lat: 31.40, lng: -93.70, tz: 'America/Chicago', geo: 'snags', water: 'fresh' },
+  { r: 'North America', n: 'Sam Rayburn Reservoir, Texas', lat: 31.10, lng: -94.10, tz: 'America/Chicago', geo: 'snags', water: 'fresh' },
+  { r: 'North America', n: 'Port Aransas, Texas', lat: 27.83, lng: -97.06, tz: 'America/Chicago', geo: 'rockwall', water: 'salt' },
+  { r: 'North America', n: 'Venice, Louisiana', lat: 29.27, lng: -89.35, tz: 'America/Chicago', geo: 'mouth', water: 'salt' },
+  { r: 'North America', n: 'Mobile Bay, Alabama', lat: 30.45, lng: -88.00, tz: 'America/Chicago', geo: 'flats', water: 'salt' },
+  { r: 'North America', n: 'Destin, Florida', lat: 30.39, lng: -86.50, tz: 'America/Chicago', geo: 'reef', water: 'salt' },
+  { r: 'North America', n: 'Lake Texoma, Texas–Oklahoma', lat: 33.85, lng: -96.65, tz: 'America/Chicago', geo: 'drop', water: 'fresh' },
+  { r: 'North America', n: 'Mississippi River, La Crosse, Wisconsin', lat: 43.80, lng: -91.25, tz: 'America/Chicago', geo: 'stream', water: 'fresh' },
+  { r: 'North America', n: 'Lake Winnebago, Wisconsin', lat: 44.00, lng: -88.40, tz: 'America/Chicago', geo: 'reef', water: 'fresh' },
+  { r: 'North America', n: 'Lake St Clair, Michigan', lat: 42.45, lng: -82.70, tz: 'America/Detroit', geo: 'weed', water: 'fresh' },
+  { r: 'North America', n: 'Lake Michigan, Chicago', lat: 41.90, lng: -87.60, tz: 'America/Chicago', geo: 'drop', water: 'fresh' },
+  { r: 'North America', n: 'Saginaw Bay, Michigan', lat: 43.85, lng: -83.70, tz: 'America/Detroit', geo: 'flats', water: 'fresh' },
+  { r: 'North America', n: 'Lake Oahe, South Dakota', lat: 44.80, lng: -100.50, tz: 'America/Chicago', geo: 'drop', water: 'fresh' },
+  { r: 'North America', n: 'Devils Lake, North Dakota', lat: 48.05, lng: -98.90, tz: 'America/Chicago', geo: 'snags', water: 'fresh' },
+  { r: 'North America', n: 'Lake Minnetonka, Minnesota', lat: 44.92, lng: -93.55, tz: 'America/Chicago', geo: 'weed', water: 'fresh' },
+  { r: 'North America', n: 'Finger Lakes, Seneca, New York', lat: 42.60, lng: -76.90, tz: 'America/New_York', geo: 'drop', water: 'fresh' },
+  { r: 'North America', n: 'Montauk, New York', lat: 41.07, lng: -71.86, tz: 'America/New_York', geo: 'surf', water: 'salt' },
+  { r: 'North America', n: 'Long Island Sound, Connecticut', lat: 41.20, lng: -72.80, tz: 'America/New_York', geo: 'reef', water: 'salt' },
+  { r: 'North America', n: 'Penobscot Bay, Maine', lat: 44.25, lng: -68.90, tz: 'America/New_York', geo: 'reef', water: 'salt' },
+  { r: 'North America', n: 'Delaware Bay', lat: 39.00, lng: -75.10, tz: 'America/New_York', geo: 'flats', water: 'salt' },
+  { r: 'North America', n: 'Susquehanna River, Pennsylvania', lat: 40.00, lng: -76.40, tz: 'America/New_York', geo: 'stream', water: 'fresh' },
+  { r: 'North America', n: 'Madison River, Montana', lat: 45.40, lng: -111.60, tz: 'America/Denver', geo: 'stream', water: 'fresh' },
+  { r: 'North America', n: 'Yellowstone River, Montana', lat: 45.65, lng: -110.55, tz: 'America/Denver', geo: 'stream', water: 'fresh' },
+  { r: 'North America', n: "Henry's Fork, Idaho", lat: 44.40, lng: -111.40, tz: 'America/Denver', geo: 'stream', water: 'fresh' },
+  { r: 'North America', n: 'Green River, Utah', lat: 40.90, lng: -109.40, tz: 'America/Denver', geo: 'stream', water: 'fresh' },
+  { r: 'North America', n: 'Lake Mead, Nevada', lat: 36.15, lng: -114.45, tz: 'America/Los_Angeles', geo: 'rockwall', water: 'fresh' },
+  { r: 'North America', n: 'Clear Lake, California', lat: 39.05, lng: -122.80, tz: 'America/Los_Angeles', geo: 'weed', water: 'fresh' },
+  { r: 'North America', n: 'Monterey Bay, California', lat: 36.80, lng: -121.90, tz: 'America/Los_Angeles', geo: 'reef', water: 'salt' },
+  { r: 'North America', n: 'San Francisco Bay', lat: 37.80, lng: -122.40, tz: 'America/Los_Angeles', geo: 'flats', water: 'salt' },
+  { r: 'North America', n: 'Lake Tahoe, California–Nevada', lat: 39.10, lng: -120.04, tz: 'America/Los_Angeles', geo: 'drop', water: 'fresh' },
+  { r: 'North America', n: 'Deschutes River, Oregon', lat: 44.90, lng: -121.10, tz: 'America/Los_Angeles', geo: 'stream', water: 'fresh' },
+  { r: 'North America', n: 'Tillamook Bay, Oregon', lat: 45.52, lng: -123.90, tz: 'America/Los_Angeles', geo: 'mouth', water: 'salt' },
+  { r: 'North America', n: 'Westport, Washington', lat: 46.90, lng: -124.10, tz: 'America/Los_Angeles', geo: 'mouth', water: 'salt' },
+  { r: 'North America', n: 'Vancouver Island, Campbell River BC', lat: 50.02, lng: -125.25, tz: 'America/Vancouver', geo: 'drop', water: 'salt' },
+  { r: 'North America', n: 'Fraser River, British Columbia', lat: 49.20, lng: -122.00, tz: 'America/Vancouver', geo: 'stream', water: 'fresh' },
+  { r: 'North America', n: 'Bow River, Calgary, Alberta', lat: 50.95, lng: -114.00, tz: 'America/Edmonton', geo: 'stream', water: 'fresh' },
+  { r: 'North America', n: 'Lake Winnipeg, Manitoba', lat: 51.00, lng: -96.80, tz: 'America/Winnipeg', geo: 'flats', water: 'fresh' },
+  { r: 'North America', n: 'Bay of Quinte, Ontario', lat: 44.15, lng: -77.20, tz: 'America/Toronto', geo: 'weed', water: 'fresh' },
+  { r: 'North America', n: 'Georgian Bay, Ontario', lat: 45.30, lng: -80.20, tz: 'America/Toronto', geo: 'reef', water: 'fresh' },
+  { r: 'North America', n: 'St Lawrence River, Quebec', lat: 45.50, lng: -73.55, tz: 'America/Toronto', geo: 'stream', water: 'fresh' },
+  { r: 'North America', n: 'Miramichi River, New Brunswick', lat: 46.95, lng: -65.60, tz: 'America/Moncton', geo: 'stream', water: 'fresh' },
+  { r: 'North America', n: 'Bristol Bay, Alaska', lat: 58.70, lng: -157.00, tz: 'America/Anchorage', geo: 'mouth', water: 'all' },
+  { r: 'North America', n: 'Homer, Alaska', lat: 59.60, lng: -151.50, tz: 'America/Anchorage', geo: 'drop', water: 'salt' },
+  { r: 'North America', n: 'Cabo San Lucas, Mexico', lat: 22.88, lng: -109.91, tz: 'America/Mazatlan', geo: 'reef', water: 'salt' },
+  { r: 'North America', n: 'Bahía de la Ascensión, Mexico', lat: 19.70, lng: -87.50, tz: 'America/Cancun', geo: 'flats', water: 'salt' },
+  { r: 'South America', n: 'Lago Guri, Venezuela', lat: 7.50, lng: -62.90, tz: 'America/Caracas', geo: 'snags', water: 'fresh' },
+  { r: 'South America', n: 'Río Orinoco, Puerto Ayacucho', lat: 5.66, lng: -67.62, tz: 'America/Caracas', geo: 'stream', water: 'fresh' },
+  { r: 'South America', n: 'Rio Araguaia, Brazil', lat: -13.00, lng: -50.60, tz: 'America/Sao_Paulo', geo: 'stream', water: 'fresh' },
+  { r: 'South America', n: 'Itaipu Lake, Brazil–Paraguay', lat: -25.00, lng: -54.40, tz: 'America/Asuncion', geo: 'snags', water: 'fresh' },
+  { r: 'South America', n: 'Rio de la Plata, Buenos Aires', lat: -34.60, lng: -58.30, tz: 'America/Argentina/Buenos_Aires', geo: 'flats', water: 'all' },
+  { r: 'South America', n: 'Lago Futalaufquen, Patagonia', lat: -42.85, lng: -71.65, tz: 'America/Argentina/Catamarca', geo: 'openlake', water: 'fresh' },
+  { r: 'South America', n: 'Coyhaique rivers, Chile', lat: -45.57, lng: -72.07, tz: 'America/Santiago', geo: 'stream', water: 'fresh' }
 ];
 const REGIONS = ['Australia', 'New Zealand', 'Europe', 'North America', 'South America'];
 const $ = id => document.getElementById(id);
@@ -937,7 +1763,7 @@ function spotFor(key) {
 function fillSpots(sel) {
   const mine = state.customs.map((c, i) => `<option value="c:${i}">${esc(c.n)}</option>`).join('');
   $('preset').innerHTML = (mine ? `<optgroup label="Your spots">${mine}</optgroup>` : '') +
-    REGIONS.map(r => `<optgroup label="${r}">${PRESETS.map((p, i) => p.r === r ? `<option value="p:${i}">${esc(p.n)}</option>` : '').join('')}</optgroup>`).join('');
+    REGIONS.map(r => `<optgroup label="${r}">${PRESETS.map((p, i) => ({ p, i })).filter(x => x.p.r === r).sort((a, b) => a.p.n.localeCompare(b.p.n)).map(({ p, i }) => `<option value="p:${i}">${esc(p.n)}</option>`).join('')}</optgroup>`).join('');
   $('preset').value = sel;
 }
 function applySpot(key) {
@@ -975,9 +1801,21 @@ async function loadWx(l) {
   if (WX[k]) return;
   WX[k] = { status: 'loading' };
   const base = `latitude=${l.lat}&longitude=${l.lng}&timezone=GMT&timeformat=unixtime`;
+  const getJson = async (url, tries = 2) => {
+    for (let i = 0; ; i++) {
+      try {
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return await r.json();
+      } catch (err) {
+        if (i + 1 >= tries) throw err;
+        await new Promise(res => setTimeout(res, 1500));
+      }
+    }
+  };
   try {
     const [f, m] = await Promise.all([
-      fetch(`https://api.open-meteo.com/v1/forecast?${base}&hourly=pressure_msl,temperature_2m&past_days=31&forecast_days=16`).then(r => r.ok ? r.json() : Promise.reject(r.status)),
+      getJson(`https://api.open-meteo.com/v1/forecast?${base}&hourly=pressure_msl,temperature_2m&past_days=31&forecast_days=16`),
       fetch(`https://marine-api.open-meteo.com/v1/marine?${base}&hourly=swell_wave_height,swell_wave_period,swell_wave_direction,wave_height,sea_surface_temperature&past_days=1&forecast_days=8`)
         .then(r => r.ok ? r.json() : null).catch(() => null)
     ]);
@@ -985,7 +1823,7 @@ async function loadWx(l) {
     WX[k] = { status: 'ok', at: Date.now(), p: ser(f, 'pressure_msl'), air: ser(f, 'temperature_2m'),
       sw: ser(m, 'swell_wave_height'), swp: ser(m, 'swell_wave_period'), swd: ser(m, 'swell_wave_direction'), wh: ser(m, 'wave_height'), sst: ser(m, 'sea_surface_temperature') };
   } catch (err) {
-    WX[k] = { status: 'fail' };
+    WX[k] = { status: 'fail', why: String(err && err.message || err) };
   }
   render();
 }
@@ -1140,7 +1978,7 @@ function reasonsAt(day, i, r, sp) {
   if (maj) out.push('Major period: moon ' + (maj.type === 'upper' ? 'overhead' : 'underfoot'));
   else if (min) out.push('Minor period: ' + (min.type === 'rise' ? 'moonrise' : 'moonset'));
   const p = r.pAt && r.pAt[i];
-  if (p) out.push(`Pressure ${Math.round(p.hpa)} hPa, ${TREND[p.trend].toLowerCase()} (${p.d3 >= 0 ? '+' : ''}${p.d3.toFixed(1)} in 3 h)`);
+  if (p) out.push(`Pressure ${Math.round(p.hpa)} hPa, ${TREND[p.trend].toLowerCase()} (${p.d3 >= 0 ? '+' : ''}${p.d3.toFixed(1)} hPa over 3 h)`);
   const sw = r.swAt && r.swAt[i];
   if (sw) { const f = swellFactor(sp, sw, $('geo').value); out.push(`Swell ${sw.h.toFixed(1)} m${sw.per ? ' @ ' + Math.round(sw.per) + ' s' : ''}${f ? ', ' + f.note : ''}`); }
   return out;
@@ -1189,7 +2027,13 @@ function drawConditions(l, day, days, wx, here) {
   const w = WX[wxKey(l)];
   $('condSrc').textContent = !w || w.status === 'loading' ? 'Loading live conditions…'
     : w.status === 'ok' ? `Live forecast · Open-Meteo · updated ${fmtTime(w.at, l.tz)}`
-    : 'Seasonal estimates · live data loads on the hosted site';
+    : location.hostname.endsWith('github.io') || location.protocol === 'http:'
+      ? `Live weather didn't load (${w.why || 'network error'}) · showing seasonal estimates`
+      : 'Seasonal estimates here · live weather loads on thompaus.github.io/fish';
+  if (w && w.status === 'fail') {
+    $('condSrc').insertAdjacentHTML('beforeend', ' · <button type="button" class="linkbtn" id="wxRetry">Try again</button>');
+    $('wxRetry').onclick = () => { delete WX[wxKey(l)]; render(); };
+  }
   const now = Date.now(), ref = now >= day.start && now < day.end ? now : day.start + 12 * 3600e3;
   const refLbl = ref === now ? 'now' : 'at midday';
   const salt = state.hab !== 'fresh' && here.some(s => s.hab !== 'fresh'), fresh = state.hab !== 'salt' && here.some(s => s.hab !== 'salt');
@@ -1198,17 +2042,17 @@ function drawConditions(l, day, days, wx, here) {
   if (salt) { const [v, s] = wt('sea'); tiles.push(['Sea temperature', v, s]); }
   if (fresh) { const [v, s] = wt('fresh'); tiles.push(['Lake and river temperature', v, s]); }
   const p = wx && wx.pressAt(ref);
-  tiles.push(['Air pressure', p ? Math.round(p.hpa) + ' hPa' : '—', p ? refLbl : 'no forecast for this date']);
-  tiles.push(['Pressure trend', p ? TREND[p.trend] : '—', p ? `${p.d3 >= 0 ? '+' : ''}${p.d3.toFixed(1)} hPa in 3 h` : 'no forecast for this date']);
-  if (salt) {
-    const sw = wx && wx.swellAt(ref);
-    tiles.push(['Swell', sw ? `${sw.h.toFixed(1)} m${sw.per ? ' · ' + Math.round(sw.per) + ' s' : ''}` : '—', sw ? `${compass(sw.dir)} ${refLbl}` : 'no swell data for this date']);
-  }
+  const noData = !w || w.status === 'loading' ? 'loading…' : w.status === 'ok' ? 'no forecast this far ahead' : 'needs live weather';
+  tiles.push(['Air pressure', p ? Math.round(p.hpa) + ' hPa' : '—', p ? refLbl : noData]);
+  tiles.push(['Barometric pressure', p ? TREND[p.trend] : '—', p ? `${p.d3 >= 0 ? '+' : ''}${p.d3.toFixed(1)} hPa over 3 h, ${refLbl}` : noData]);
+  const sw = wx && wx.swellAt(ref), coastal = !!(w && w.status === 'ok' && w.sw);
+  tiles.push(['Swell', sw ? `${sw.h.toFixed(1)} m${sw.per ? ' · ' + Math.round(sw.per) + ' s' : ''}` : '—',
+    sw ? `${compass(sw.dir)} ${refLbl}` : w && w.status === 'ok' && !coastal ? 'none here (inland water)' : noData]);
   $('tiles').innerHTML = tiles.map(([k, v, s]) => `<div class="tile"><span class="k">${k}</span><span class="v">${v}</span><span class="s">${s}</span></div>`).join('');
 
   const box = $('swellChart');
-  box.parentElement.hidden = !salt;
-  if (!salt) return;
+  box.parentElement.hidden = !salt && !coastal;
+  if (!salt && !coastal) return;
   const t0 = days[0].start, t1 = days[days.length - 1].end;
   const raw = w && w.status === 'ok' && w.sw ? w.sw : null;
   const T = [], V = [];
@@ -1337,6 +2181,169 @@ function choose(i) {
 }
 $('controls').addEventListener('submit', e => e.preventDefault());
 
+/* ---------- Worldwide fish records (GBIF) ---------- */
+const GB = {};
+const GENERIC = { id: 'generic', name: 'Other fish', hab: 'both', tod: [0.9, 0.5, 0.9, 0.5], sol: 0.75, moonlight: 0, baro: 0.5,
+  season: { spring: 0.95, summer: 0.95, autumn: 0.95, winter: 0.75 }, temp: [-2, 4, 30, 40], geo: {} };
+async function loadGbif(l) {
+  const k = wxKey(l);
+  if (GB[k]) return;
+  GB[k] = { status: 'loading' };
+  const d = 0.3, f = n => n.toFixed(3);
+  try {
+    const r = await fetch(`https://api.gbif.org/v1/occurrence/search?limit=0&facet=speciesKey&facetLimit=80&taxonKey=204&occurrenceStatus=PRESENT&hasCoordinate=true&hasGeospatialIssue=false&decimalLatitude=${f(l.lat - d)},${f(l.lat + d)}&decimalLongitude=${f(l.lng - d)},${f(l.lng + d)}`);
+    if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    const counts = j.facets && j.facets[0] ? j.facets[0].counts : [];
+    const list = await Promise.all(counts.slice(0, 80).map(c => fetch('https://api.gbif.org/v1/species/' + c.name).then(x => x.json())
+      .then(s => ({ n: c.count, sci: s.canonicalName || s.scientificName || '', common: s.vernacularName || '', family: s.family || '' })).catch(() => null)));
+    GB[k] = { status: 'ok', total: j.count || 0, list: list.filter(x => x && x.sci) };
+  } catch (err) {
+    GB[k] = { status: 'fail' };
+  }
+  render();
+}
+function gbifHit(sp, list) {
+  const names = [sp.latin, ...(sp.alt || [])];
+  let n = 0;
+  for (const g of list) {
+    if (names.some(nm => nm.endsWith(' spp.') ? g.sci.startsWith(nm.split(' ')[0] + ' ') : g.sci === nm)) n += g.n;
+  }
+  return n || null;
+}
+function drawOthers(l, day, wx, geo, hab) {
+  const g = GB[wxKey(l)], box = $('others');
+  if (!g || g.status === 'loading') { box.innerHTML = '<p class="hint">Loading fish recorded near this spot…</p>'; return; }
+  if (g.status !== 'ok') { box.innerHTML = '<p class="nodata">The worldwide fish records load on the live site.</p>'; return; }
+  const others = g.list.filter(x => !SPECIES.some(sp => gbifHit(sp, [x])));
+  if (!g.list.length) { box.innerHTML = '<p class="nodata">No fish records within about 30 km of this spot yet.</p>'; return; }
+  const r = scoreSpecies(GENERIC, day, wx, 'any', hab);
+  const [lbl, cls] = ratingOf(r.score);
+  const topW = r.topW;
+  box.innerHTML = `
+    <div class="sec-head"><div>
+      <div class="eyebrow">${g.list.length} species in ${g.total.toLocaleString()} records within about 30 km · GBIF</div>
+      <h3>Also recorded here</h3></div>
+      ${others.length ? `<div class="r-${cls}"><b>General bite rating ${r.score}</b> · ${lbl}${topW ? ` · best ${fmtTime(topW.from, l.tz)}–${fmtTime(topW.to, l.tz)}` : ''}</div>` : ''}
+    </div>
+    ${others.length ? `<ul class="others">${others.map(o => `<li><span>${esc(o.common || o.sci)}</span><small>${o.common ? `<i>${esc(o.sci)}</i> · ` : ''}${esc(o.family)} · ${o.n} record${o.n === 1 ? '' : 's'}</small></li>`).join('')}</ul>`
+      : '<p class="hint">Every species recorded here already has its own card above.</p>'}
+    <p class="hint">Records come from GBIF, the Global Biodiversity Information Facility: surveys, museum specimens and angler reports. These fish get a general rating from the moon, sun, pressure and season; the ones with cards above also use their own habits.</p>`;
+}
+
+/* ---------- Map ---------- */
+let map = null, markers = null, markerDate = null, mapCenterKey = null, clickSpot = null;
+function rateSpot(spot, dateStr) {
+  const l = { lat: spot.lat, lng: spot.lng, tz: spot.tz };
+  const day = computeDay(dateStr, l), water = spot.water || 'all';
+  const res = SPECIES.filter(s => inRange(s, l.lat, l.lng) && (water === 'all' || s.hab === water || s.hab === 'both'))
+    .map(sp => ({ sp, r: scoreSpecies(sp, day, null, spot.geo || 'any', water) })).sort((a, b) => b.r.score - a.r.score);
+  return { day, res };
+}
+async function quickWx(lat, lng, dateStr, tz) {
+  const base = `latitude=${lat.toFixed(3)}&longitude=${lng.toFixed(3)}&timeformat=unixtime`;
+  const [f, m] = await Promise.all([
+    fetch(`https://api.open-meteo.com/v1/forecast?${base}&timezone=auto&hourly=pressure_msl&past_days=1&forecast_days=16`).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(`https://marine-api.open-meteo.com/v1/marine?${base}&hourly=swell_wave_height,swell_wave_period,swell_wave_direction&past_days=1&forecast_days=8`).then(r => r.ok ? r.json() : null).catch(() => null)
+  ]);
+  const tzz = f && f.timezone && f.timezone !== 'GMT' ? f.timezone : tz;
+  const now = Date.now(), d0 = zonedMidnight(dateStr, tzz || 'UTC'), ref = now >= d0 && now < d0 + DAY_MS ? now : d0 + 12 * 3600e3;
+  const pick = (o, key, t) => {
+    if (!o || !o.hourly || !o.hourly[key]) return null;
+    const T = o.hourly.time; let bi = -1, bd = Infinity;
+    T.forEach((x, i) => { const d = Math.abs(x * 1000 - t); if (d < bd) { bd = d; bi = i; } });
+    return bd <= 3600e3 ? o.hourly[key][bi] : null;
+  };
+  const p = pick(f, 'pressure_msl', ref), p3 = pick(f, 'pressure_msl', ref - 3 * 3600e3);
+  const d3 = p != null && p3 != null ? p - p3 : null;
+  return { tz: tzz, ref, hpa: p, d3, trend: d3 == null ? null : d3 <= -1 ? 'fall' : d3 >= 2.5 ? 'post' : d3 >= 1 ? 'rise' : 'steady',
+    sw: pick(m, 'swell_wave_height', ref), per: pick(m, 'swell_wave_period', ref), dir: pick(m, 'swell_wave_direction', ref) };
+}
+function wxLine(q) {
+  if (!q) return '';
+  const bits = [];
+  if (q.hpa != null) bits.push(`Barometric ${Math.round(q.hpa)} hPa${q.trend ? ', ' + TREND[q.trend].toLowerCase() : ''}`);
+  if (q.sw != null) bits.push(`Swell ${q.sw.toFixed(1)} m${q.per ? ' @ ' + Math.round(q.per) + ' s' : ''} ${compass(q.dir)}`);
+  return bits.length ? `<p class="pop-wx">${bits.join('<br>')}</p>` : '';
+}
+function spotPopup(spot, dateStr, extra) {
+  const { res } = rateSpot(spot, dateStr);
+  const top = res.slice(0, 4);
+  const when = new Date(zonedMidnight(dateStr, spot.tz) + 12 * 3600e3).toLocaleDateString('en-GB', { timeZone: spot.tz, weekday: 'short', day: 'numeric', month: 'short' });
+  return `<div class="pop"><b class="pop-t">${esc(spot.n)}</b><div class="hint">${when}</div>
+    ${top.length ? `<ul>${top.map(({ sp, r }) => { const [l2, c2] = ratingOf(r.score); return `<li><span>${esc(sp.name.split(' (')[0])}</span><span class="r-${c2}"><b>${r.score}</b> ${l2}</span>${r.topW ? `<small>Go ${fmtTime(r.topW.from, spot.tz)}–${fmtTime(r.topW.to, spot.tz)}</small>` : ''}</li>`; }).join('')}</ul>`
+      : '<p class="hint">No species in the guide here yet. Open it to see every fish recorded nearby.</p>'}
+    ${extra || ''}<button type="button" class="pop-btn" data-openspot="1">Open full forecast here</button></div>`;
+}
+function initMap() {
+  if (map) return;
+  if (typeof L === 'undefined') { $('map').innerHTML = '<p class="nodata">The map loads on the live site.</p>'; return; }
+  const l = loc();
+  map = L.map('map', { worldCopyJump: true, minZoom: 2 }).setView([l.lat, l.lng], 6);
+  const theme = document.documentElement.dataset.theme;
+  const dark = theme === 'dark' || (theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+  L.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark ? 'dark_all' : 'rastertiles/voyager'}/{z}/{x}/{y}{r}.png`, {
+    maxZoom: 18, subdomains: 'abcd', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  }).addTo(map);
+  markers = L.layerGroup().addTo(map);
+  map.on('click', e => mapClick(e.latlng.lat, L.Util.wrapNum(e.latlng.lng, [-180, 180], true)));
+  map.getContainer().addEventListener('click', e => {
+    if (!e.target.closest('[data-openspot]') || !clickSpot) return;
+    const s = clickSpot;
+    if (s.key) { fillSpots(s.key); applySpot(s.key); }
+    else {
+      state.customs = [{ n: s.n, lat: s.lat, lng: s.lng, tz: s.tz, geo: s.geo, water: s.water }, ...state.customs.filter(c => c.n !== s.n)].slice(0, 8);
+      fillSpots('c:0'); applySpot('c:0');
+    }
+    map.closePopup();
+    render();
+    $('goTitle').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+function drawMap(l, dateStr) {
+  if (!map) return;
+  const k = wxKey(l);
+  if (k !== mapCenterKey) { mapCenterKey = k; map.setView([l.lat, l.lng], Math.max(map.getZoom(), 5)); }
+  if (markerDate === dateStr) return;
+  markerDate = dateStr;
+  markers.clearLayers();
+  PRESETS.forEach((p, i) => {
+    const { res } = rateSpot(p, dateStr);
+    const best = res[0], s = best ? best.r.score : 0;
+    L.circleMarker([p.lat, p.lng], { radius: 8, weight: 2, className: 'mk mk-' + ratingOf(s)[1] })
+      .bindTooltip(`${esc(p.n)}<br><b>${s}</b> ${best ? esc(best.sp.name.split(' (')[0]) : ''}`, { direction: 'top', offset: [0, -6] })
+      .on('click', async e => {
+        L.DomEvent.stopPropagation(e);
+        clickSpot = { ...p, key: 'p:' + i };
+        const d = $('date').value, pop = L.popup({ maxWidth: 280 }).setLatLng([p.lat, p.lng]).setContent(spotPopup(p, d, '<p class="hint">Loading pressure and swell…</p>')).openOn(map);
+        const q = await quickWx(p.lat, p.lng, d, p.tz);
+        if (map.hasLayer(pop)) pop.setContent(spotPopup(p, d, wxLine(q) || '<p class="hint">Live pressure and swell load on the live site.</p>'));
+      })
+      .addTo(markers);
+  });
+}
+async function mapClick(lat, lng) {
+  const dateStr = $('date').value;
+  const pop = L.popup({ maxWidth: 280 }).setLatLng([lat, lng]).setContent('<p class="hint">Rating this spot…</p>').openOn(map);
+  const [q, nm] = await Promise.all([
+    quickWx(lat, lng, dateStr, null),
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=en&lat=${lat.toFixed(4)}&lon=${lng.toFixed(4)}`).then(r => r.json()).catch(() => null)
+  ]);
+  let tz = q && q.tz ? q.tz : null;
+  if (!tz) { const off = Math.round(lng / 15); tz = off === 0 ? 'UTC' : `Etc/GMT${off > 0 ? '-' : '+'}${Math.abs(off)}`; }
+  let name = `${Math.abs(lat).toFixed(2)}°${lat < 0 ? 'S' : 'N'}, ${Math.abs(lng).toFixed(2)}°${lng < 0 ? 'W' : 'E'}`, water = 'all', geo = 'any';
+  if (nm && nm.address) {
+    const a = nm.address;
+    name = [nm.name || a.city || a.town || a.village || a.county, a.state || a.country].filter(Boolean).join(', ') || name;
+    const t = (nm.type || '') + ' ' + (nm.category || '');
+    if (/water|lake|reservoir/.test(t)) { water = 'fresh'; geo = 'openlake'; }
+    else if (/river|stream/.test(t)) { water = 'fresh'; geo = 'stream'; }
+    else if (/bay|beach|coast|sea/.test(t)) { water = 'salt'; }
+  } else if (nm && nm.error) { water = 'salt'; name = 'Open water · ' + name; }
+  clickSpot = { n: name, lat, lng, tz, geo, water };
+  if (map.hasLayer(pop)) pop.setContent(spotPopup(clickSpot, dateStr, wxLine(q) || '<p class="hint">Live pressure and swell load on the live site.</p>'));
+}
+
 /* ---------- Events ---------- */
 const shiftDate = n => { $('date').value = addDays($('date').value || todayIn(loc().tz), n); render(); };
 $('prevDay').addEventListener('click', () => shiftDate(-1));
@@ -1355,7 +2362,9 @@ function render() {
   store.set('solunar-v4', { spot: $('preset').value, geo, hab: state.hab, unit: state.unit, customs: state.customs });
   loadWx(l);
   const wx = makeWx(l);
-  const here = SPECIES.filter(s => inRange(s, l.lat, l.lng));
+  loadGbif(l);
+  const gb = GB[wxKey(l)], gbN = sp => gb && gb.status === 'ok' ? gbifHit(sp, gb.list) : null;
+  const here = SPECIES.filter(s => inRange(s, l.lat, l.lng) || gbN(s));
   const shown = here.filter(s => state.hab === 'all' || s.hab === state.hab || s.hab === 'both');
   const day = computeDay(dateStr, l);
   const days = [...Array(7)].map((_, i) => computeDay(addDays(dateStr, i), l));
@@ -1406,7 +2415,7 @@ function render() {
       </div>
       <div><div class="eyebrow" style="margin-bottom:4px">Best windows</div><div class="windows">${wins}</div></div>
       <div><div class="strip" aria-hidden="true">${strip.join('')}</div><div class="strip-axis"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div></div>
-      <div class="chips"><span class="chip">${sName}: ${sp.seasonNote[r.season]}</span>${gChip}${tChip}${pChip}${sChip}</div>
+      <div class="chips"><span class="chip">${sName}: ${sp.seasonNote[r.season]}</span>${gChip}${tChip}${pChip}${sChip}${gbN(sp) ? `<span class="chip">Recorded here: ${gbN(sp)} record${gbN(sp) === 1 ? '' : 's'}</span>` : ''}</div>
       <button type="button" class="seebtn" data-focus="${sp.id}">See when to go</button>
       <details><summary>How to fish it</summary><ul>${sp.tips.map(t => `<li>${t}</li>`).join('')}<li>Comfort range ${sp.temp[1]}–${sp.temp[2]} °C (${Math.round(sp.temp[1] * 9 / 5 + 32)}–${Math.round(sp.temp[2] * 9 / 5 + 32)} °F)</li>${sp.swell ? `<li>Likes ${sp.swell[0]}–${sp.swell[1]} m of swell where it's exposed</li>` : ''}</ul></details>
     </article>`;
@@ -1414,6 +2423,8 @@ function render() {
   $('species').querySelectorAll('[data-focus]').forEach(b => b.addEventListener('click', () => {
     state.focus = b.dataset.focus; render(); $('goTitle').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }));
+  drawOthers(l, day, wx, geo, state.hab);
+  drawMap(l, dateStr);
 
   // Week
   const cellColor = s => `color-mix(in srgb, var(--${ratingOf(s)[1]}) ${Math.round(18 + s * 0.45)}%, transparent)`;
@@ -1426,6 +2437,8 @@ function render() {
   $('week').querySelectorAll('button[data-date]').forEach(b => b.addEventListener('click', () => { $('date').value = b.dataset.date; render(); }));
 }
 render();
+initMap();
+drawMap(loc(), $('date').value);
 })();
 
 </script>
