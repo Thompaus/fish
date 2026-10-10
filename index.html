@@ -831,6 +831,50 @@ svg.leaflet-image-layer.leaflet-interactive path {
 .others li{display:flex;flex-direction:column;gap:1px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);min-width:0}
 .others small{color:var(--muted);font-size:12px}
 #others{display:flex;flex-direction:column;gap:12px}
+.hero{display:flex;flex-direction:column;gap:16px;padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:14px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:46px;pointer-events:none;opacity:.5;background:radial-gradient(60px 18px at 30px 46px,var(--accent-soft) 98%,transparent) 0 0/60px 46px repeat-x}
+.hero>*{position:relative;z-index:1}
+.hero-main{display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center}
+@media (max-width:640px){.hero-main{grid-template-columns:1fr auto}.hero-main .hero-photo{grid-column:1/-1;width:100%;height:150px}}
+.hero-photo{width:150px;height:110px;border-radius:12px;overflow:hidden;background:var(--accent-soft);display:grid;place-items:center}
+.hero-photo img,.pick-ph img,.fishpic img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-photo svg{width:70%}
+.hero-text{display:flex;flex-direction:column;gap:6px;min-width:0}
+.verdict{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,5vw,46px);line-height:1.02;text-wrap:balance}
+.hero-line{margin:0;font-size:16px;max-width:52ch}
+.gauge{width:120px;height:120px;flex:none}
+.quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.qd{border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;font-weight:600}
+.qd[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.hero-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.pick{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;text-align:left;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);cursor:pointer;color:var(--ink);font:inherit;min-width:0}
+.pick:hover{border-color:var(--accent)}
+.pick-ph{width:52px;height:40px;border-radius:6px;overflow:hidden;background:var(--accent-soft);display:grid;place-items:center}
+.pick-ph svg{width:80%}
+.pick-t{display:flex;flex-direction:column;min-width:0}
+.pick-t b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick-t small{color:var(--muted);font-size:12px}
+.pick-s{font-family:var(--f-display);font-size:26px;font-weight:700}
+.hero-cond{display:flex;flex-wrap:wrap;gap:6px}
+.hchip{font-size:12.5px;padding:4px 10px;border-radius:99px;background:var(--accent-soft);border:0;color:var(--ink);font-family:inherit}
+.hchip b{font-weight:600;margin-right:4px;color:var(--muted)}
+.hbtn{cursor:pointer;outline:1.5px solid var(--accent)}
+.hero-note{margin:0;padding:8px 12px;border-left:3px solid var(--brass);background:var(--bg);border-radius:4px;font-size:13.5px}
+.fishpic{width:84px;height:60px;border-radius:8px;overflow:hidden;background:var(--accent-soft);display:grid;place-items:center;flex:none}
+.fishpic svg{width:80%}
+.card-head{grid-template-columns:auto 1fr auto !important}
+.card{cursor:pointer}
+.card .credit{font-size:10.5px;color:var(--muted)}
+.map-wrap{position:relative}
+.map-hint{position:absolute;z-index:500;left:56px;top:10px;max-width:min(320px,calc(100% - 70px));background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px 10px 10px 2px;padding:8px 30px 8px 12px;font-size:13px;line-height:1.4;box-shadow:0 6px 18px color-mix(in srgb,var(--ink) 16%,transparent)}
+.map-hint button{position:absolute;right:6px;top:4px;border:0;background:none;font-size:16px;cursor:pointer;color:var(--muted)}
+.pin{background:none;border:0}
+.pin span{display:block;width:20px;height:20px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--brass);border:2px solid var(--surface);box-shadow:0 2px 6px color-mix(in srgb,var(--ink) 30%,transparent)}
+.pop-note{width:100%;min-height:54px;margin:6px 0;font:inherit;font-size:12.5px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);resize:vertical}
+.pop-row{display:flex;gap:6px}
+.pop-row .pop-btn{margin-top:0}
+.pop-btn.ghost{background:none;color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:8px 16px;border-radius:99px;font-size:13px;z-index:1000}
 </style>
 </head>
 <body>
@@ -839,7 +883,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <div>
       <div class="eyebrow">Solunar tables × species habits</div>
       <h1>Solunar Bite Forecast</h1>
-      <p>Pick a spot and a date. Each species gets a 0–100 bite rating from the moon and sun timing, its own feeding habits, the kind of spot you're fishing, the season, live water temperature, air pressure and swell. Only fish found at your spot are listed.</p>
+      <p>Where to fish, what to target and when to be on the water. Every rating blends the moon and sun, each fish's habits, the spot, live barometric pressure, water temperature and swell.</p>
     </div>
   </header>
 
@@ -870,10 +914,12 @@ svg.leaflet-image-layer.leaflet-interactive path {
     </div>
   </form>
 
+  <section class="hero" id="hero" aria-live="polite"></section>
+
   <section aria-labelledby="mapTitle" class="panel">
     <div class="sec-head">
       <div>
-        <div class="eyebrow">Tap anywhere for that spot's rating on the picked date</div>
+        <div class="eyebrow">Dots are rated for the picked date · gold pins are yours</div>
         <h2 id="mapTitle">Fishing map</h2>
       </div>
       <div class="legend-dots" aria-label="Rating colours">
@@ -883,7 +929,10 @@ svg.leaflet-image-layer.leaflet-interactive path {
         <span><i style="background:var(--poor)"></i>Poor</span>
       </div>
     </div>
-    <div id="map" class="map" role="application" aria-label="Map of fishing spots"></div>
+    <div class="map-wrap">
+      <div id="map" class="map" role="application" aria-label="Map of fishing spots"></div>
+      <div class="map-hint" id="mapHint"><b>Tap anywhere to add a spot.</b> You'll see that day's best fish and times, and you can save it as a pin with your own notes: what's biting, bait, access. <button type="button" aria-label="Hide tip">×</button></div>
+    </div>
   </section>
 
   <section aria-labelledby="goTitle" class="panel">
@@ -1222,7 +1271,7 @@ const SPECIES = [
     season: { spring: 0.8, summer: 1, autumn: 0.75, winter: 0.35 }, temp: [10, 21, 29, 33],
     seasonNote: { spring: 'Moving up rivers as water warms', summer: 'Peak season, night bite is strongest', autumn: 'Feeding heavily before cooling', winter: 'Sluggish in deep holes' },
     tips: ['Night fishing beats day; darker moonless nights are often better', 'Cut bait or stink bait on the bottom near holes and current seams', 'A rise after rain brings them out to feed'] },
-  { id: 'crappie', name: 'Crappie', latin: 'Pomoxis spp.', alt: ['Pomoxis annularis', 'Pomoxis nigromaculatus'], hab: 'fresh',
+  { id: 'crappie', name: 'Crappie', wiki: 'Crappie', latin: 'Pomoxis spp.', alt: ['Pomoxis annularis', 'Pomoxis nigromaculatus'], hab: 'fresh',
     range: [[25, 52, -125, -66]], baro: 0.8,
     geo: { snags: 1, jetty: 1, weed: 0.7, drop: 0.7, openlake: 0.4, stream: 0.4, mouth: 0.4, flats: 0.3, reef: 0.3, rockwall: 0.3 },
     tod: [0.9, 0.5, 1, 0.6], sol: 0.75, moonlight: 0.2,
@@ -1250,14 +1299,14 @@ const SPECIES = [
     season: { spring: 0.85, summer: 1, autumn: 0.85, winter: 0.35 }, temp: [20, 26, 32, 35],
     seasonNote: { spring: 'Build-up season, fish start firing', summer: 'Wet season run-off, peak action', autumn: 'Run-off season, creek mouths fire', winter: 'Cool water shuts them down' },
     tips: ['Fish creek mouths and drains on the run-out tide', 'Big tides around new and full moon line up with the best barra days', 'Hard-bodied lures and soft vibes worked slow along snags'] },
-  { id: 'snapper', name: 'Snapper', latin: 'Chrysophrys auratus', alt: ['Pagrus auratus'], hab: 'salt',
+  { id: 'snapper', name: 'Snapper', wiki: 'Australasian snapper', latin: 'Chrysophrys auratus', alt: ['Pagrus auratus'], hab: 'salt',
     range: [[-44, -20, 112, 154], [-48, -34, 165, 179]], baro: 0.3,
     swell: [0.5, 1.5], geo: { reef: 1, rockwall: 0.8, drop: 0.8, mouth: 0.6, jetty: 0.5, weed: 0.4, flats: 0.3, surf: 0.3, snags: 0.3, stream: 0 },
     tod: [1, 0.5, 0.95, 0.6], sol: 0.9, moonlight: 0.1,
     season: { spring: 0.9, summer: 0.8, autumn: 0.9, winter: 0.7 }, temp: [12, 16, 22, 26],
     seasonNote: { spring: 'Spawning aggregations move inshore', summer: 'Inshore reefs and bays', autumn: 'Good inshore bite', winter: 'Big fish on deeper reefs' },
     tips: ['Change of tide plus a solunar period is the classic snapper window', 'Berley (chum) to bring fish up', 'Soft plastics or lightly weighted baits drifting back'] },
-  { id: 'red', name: 'Red drum (redfish)', latin: 'Sciaenops ocellatus', hab: 'salt',
+  { id: 'red', name: 'Red drum (redfish)', wiki: 'Red drum', latin: 'Sciaenops ocellatus', hab: 'salt',
     range: [[24, 41, -100, -70], [18, 30, -98, -86]], baro: 0.4,
     swell: [0, 0.8], geo: { flats: 1, mouth: 0.9, weed: 0.8, jetty: 0.7, rockwall: 0.7, surf: 0.7, drop: 0.5, reef: 0.5, snags: 0.4, stream: 0.2 },
     tod: [0.9, 0.65, 0.85, 0.5], sol: 0.8, moonlight: 0.1,
@@ -1299,7 +1348,7 @@ const SPECIES = [
     season: { spring: 0.15, summer: 1, autumn: 0.9, winter: 0.6 }, temp: [10, 16, 26, 30],
     seasonNote: { spring: 'Closed season 1 Sep to 30 Nov in most waters; leave them to spawn', summer: 'Opening season, fish are aggressive', autumn: 'Strong bite as water cools', winter: 'Slow but the biggest fish are caught now' },
     tips: ['Big snags in deep holes on the outside of river bends', 'Spinnerbaits and big hardbodies slow-rolled through the timber; surface lures at night in summer', 'Check your state rules for closed season, size and bag limits'] },
-  { id: 'abass', name: 'Australian bass', latin: 'Percalates novemaculeata', alt: ['Macquaria novemaculeata'], hab: 'fresh',
+  { id: 'abass', name: 'Australian bass', wiki: 'Australian bass', latin: 'Percalates novemaculeata', alt: ['Macquaria novemaculeata'], hab: 'fresh',
     range: [[-38.5, -24.5, 145.5, 154]], baro: 0.75,
     geo: { snags: 1, stream: 0.9, weed: 0.8, openlake: 0.6, drop: 0.6, mouth: 0.5, jetty: 0.4, flats: 0.3, rockwall: 0.4, reef: 0.3 },
     tod: [0.95, 0.4, 1, 0.7], sol: 0.75, moonlight: 0.2,
@@ -1313,7 +1362,7 @@ const SPECIES = [
     season: { spring: 0.9, summer: 0.9, autumn: 0.9, winter: 0.6 }, temp: [6, 14, 24, 28],
     seasonNote: { spring: 'Spawning in weedy shallows', summer: 'Schools around weed and timber', autumn: 'Schooling up and feeding well', winter: 'Deep schools, slow but catchable' },
     tips: ['Small spinners, soft plastics or worms around weed edges and standing timber', 'Find the school and keep fishing it', 'Pest species in Australia: check rules, many waters ask you not to release them'] },
-  { id: 'golden', name: 'Golden perch (yellowbelly)', latin: 'Macquaria ambigua', hab: 'fresh',
+  { id: 'golden', name: 'Golden perch (yellowbelly)', wiki: 'Golden perch', latin: 'Macquaria ambigua', hab: 'fresh',
     range: [[-38, -20, 136, 153]], baro: 0.7,
     geo: { snags: 1, drop: 0.8, stream: 0.8, openlake: 0.6, weed: 0.6, rockwall: 0.6, reef: 0.5, flats: 0.4, jetty: 0.4, mouth: 0.4 },
     tod: [0.9, 0.5, 1, 0.6], sol: 0.75, moonlight: 0.1,
@@ -1369,7 +1418,7 @@ const SPECIES = [
     season: { spring: 0.7, summer: 1, autumn: 0.8, winter: 0.3 }, temp: [12, 20, 28, 32],
     seasonNote: { spring: 'Waking up as water warms', summer: 'Peak season, especially at night', autumn: 'Feeding hard before winter', winter: 'Dormant in deep holes' },
     tips: ['Deep holes and snags in big rivers after dark', 'Big baits: pellets, squid or live fish', 'Heavy gear; these fish can top 100 kg'] },
-  { id: 'kahawai', name: 'Kahawai / Australian salmon', latin: 'Arripis spp.', hab: 'salt',
+  { id: 'kahawai', name: 'Kahawai / Australian salmon', wiki: 'Arripis trutta', latin: 'Arripis spp.', hab: 'salt',
     range: [[-48, -34, 165, 179], [-44, -28, 113, 154]], baro: 0.3,
     swell: [0.5, 2], geo: { surf: 1, rockwall: 1, mouth: 0.9, reef: 0.7, jetty: 0.6, drop: 0.5, flats: 0.4, weed: 0.3 },
     tod: [1, 0.6, 0.9, 0.2], sol: 0.7, moonlight: 0,
@@ -1383,7 +1432,7 @@ const SPECIES = [
     season: { spring: 0.8, summer: 1, autumn: 0.9, winter: 0.5 }, temp: [16, 18, 24, 27],
     seasonNote: { spring: 'Arriving on the inshore reefs', summer: 'Peak season around reefs, wharves and markers', autumn: 'Still hot, big fish around', winter: 'Fewer fish, deeper' },
     tips: ['Live baits (yellowtail, slimy mackerel) around pinnacles and markers', 'Jigs and stickbaits when they are up on top', 'They run straight for the reef: heavy drag and strong leader'] },
-  { id: 'peacock', name: 'Peacock bass', latin: 'Cichla spp.', hab: 'fresh',
+  { id: 'peacock', name: 'Peacock bass', wiki: 'Cichla', latin: 'Cichla spp.', hab: 'fresh',
     range: [[-20, 10, -76, -44], [25, 27, -81, -80]], baro: 0.5,
     geo: { snags: 1, weed: 0.8, stream: 0.8, openlake: 0.7, drop: 0.6, mouth: 0.6, rockwall: 0.6, jetty: 0.5, flats: 0.5, reef: 0.5 },
     tod: [0.9, 0.9, 0.8, 0.1], sol: 0.6, moonlight: 0,
@@ -2171,7 +2220,7 @@ function choose(i) {
     const hit = WATER_BY_CODE.find(([re]) => re.test(code));
     const n = [h.name, h.admin1 || h.country].filter(Boolean).join(', ');
     state.customs = [{ n, lat: h.latitude, lng: h.longitude, tz: h.timezone, geo: hit ? hit[2] : 'any', water: hit ? hit[1] : 'all' },
-      ...state.customs.filter(c => c.n !== n)].slice(0, 8);
+      ...state.customs.filter(c => c.n !== n)].slice(0, 20);
     key = 'c:0';
   }
   fillSpots(key); applySpot(key);
@@ -2232,6 +2281,26 @@ function drawOthers(l, day, wx, geo, hab) {
 }
 
 /* ---------- Map ---------- */
+let pinLayer = null;
+function toast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; t.setAttribute('role', 'status');
+  document.body.appendChild(t); setTimeout(() => t.remove(), 2200);
+}
+function drawPins() {
+  if (!pinLayer) return;
+  pinLayer.clearLayers();
+  state.pins.forEach(p => {
+    L.marker([p.lat, p.lng], { icon: L.divIcon({ className: 'pin', html: '<span></span>', iconSize: [22, 30], iconAnchor: [11, 28] }) })
+      .bindTooltip(`<b>${esc(p.n)}</b>${p.note ? '<br>' + esc(p.note.slice(0, 80)) : ''}`, { direction: 'top', offset: [0, -24] })
+      .on('click', async e => {
+        L.DomEvent.stopPropagation(e);
+        clickSpot = p;
+        const d = $('date').value, pop = L.popup({ maxWidth: 280 }).setLatLng([p.lat, p.lng]).setContent(spotPopup(p, d, '<p class="hint">Loading pressure and swell…</p>')).openOn(map);
+        const q = await quickWx(p.lat, p.lng, d, p.tz);
+        if (map.hasLayer(pop)) pop.setContent(spotPopup(p, d, wxLine(q)));
+      }).addTo(pinLayer);
+  });
+}
 let map = null, markers = null, markerDate = null, mapCenterKey = null, clickSpot = null;
 function rateSpot(spot, dateStr) {
   const l = { lat: spot.lat, lng: spot.lng, tz: spot.tz };
@@ -2273,7 +2342,10 @@ function spotPopup(spot, dateStr, extra) {
   return `<div class="pop"><b class="pop-t">${esc(spot.n)}</b><div class="hint">${when}</div>
     ${top.length ? `<ul>${top.map(({ sp, r }) => { const [l2, c2] = ratingOf(r.score); return `<li><span>${esc(sp.name.split(' (')[0])}</span><span class="r-${c2}"><b>${r.score}</b> ${l2}</span>${r.topW ? `<small>Go ${fmtTime(r.topW.from, spot.tz)}–${fmtTime(r.topW.to, spot.tz)}</small>` : ''}</li>`; }).join('')}</ul>`
       : '<p class="hint">No species in the guide here yet. Open it to see every fish recorded nearby.</p>'}
-    ${extra || ''}<button type="button" class="pop-btn" data-openspot="1">Open full forecast here</button></div>`;
+    ${extra || ''}
+    <textarea class="pop-note" placeholder="Your note: what's biting, bait, access…" aria-label="Note for this spot">${esc((pinFor(spot) || {}).note || '')}</textarea>
+    <div class="pop-row"><button type="button" class="pop-btn ghost" data-savepin="1">${pinFor(spot) ? 'Update pin' : 'Save pin'}</button><button type="button" class="pop-btn" data-openspot="1">Full forecast</button></div>
+    ${pinFor(spot) ? '<button type="button" class="linkbtn" data-delpin="1">Remove pin</button>' : ''}</div>`;
 }
 function initMap() {
   if (map) return;
@@ -2286,13 +2358,33 @@ function initMap() {
     maxZoom: 18, subdomains: 'abcd', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
   }).addTo(map);
   markers = L.layerGroup().addTo(map);
+  pinLayer = L.layerGroup().addTo(map);
+  drawPins();
+  const hint = $('mapHint');
+  if (store.get('solunar-hint-hidden')) hint.hidden = true;
+  hint.querySelector('button').addEventListener('click', () => { hint.hidden = true; store.set('solunar-hint-hidden', true); });
+  map.on('click', () => { hint.hidden = true; });
   map.on('click', e => mapClick(e.latlng.lat, L.Util.wrapNum(e.latlng.lng, [-180, 180], true)));
   map.getContainer().addEventListener('click', e => {
-    if (!e.target.closest('[data-openspot]') || !clickSpot) return;
+    if (!clickSpot) return;
+    if (e.target.closest('[data-savepin]')) {
+      const note = (map.getContainer().querySelector('.pop-note') || {}).value || '';
+      const s = clickSpot, ex = pinFor(s);
+      if (ex) ex.note = note.trim();
+      else state.pins.push({ n: s.n, lat: s.lat, lng: s.lng, tz: s.tz, geo: s.geo || 'any', water: s.water || 'all', note: note.trim() });
+      savePins(); drawPins(); map.closePopup(); toast(ex ? 'Pin updated' : 'Pin saved');
+      return;
+    }
+    if (e.target.closest('[data-delpin]')) {
+      state.pins = state.pins.filter(p => p !== pinFor(clickSpot));
+      savePins(); drawPins(); map.closePopup(); toast('Pin removed');
+      return;
+    }
+    if (!e.target.closest('[data-openspot]')) return;
     const s = clickSpot;
     if (s.key) { fillSpots(s.key); applySpot(s.key); }
     else {
-      state.customs = [{ n: s.n, lat: s.lat, lng: s.lng, tz: s.tz, geo: s.geo, water: s.water }, ...state.customs.filter(c => c.n !== s.n)].slice(0, 8);
+      state.customs = [{ n: s.n, lat: s.lat, lng: s.lng, tz: s.tz, geo: s.geo, water: s.water }, ...state.customs.filter(c => c.n !== s.n)].slice(0, 20);
       fillSpots('c:0'); applySpot('c:0');
     }
     map.closePopup();
@@ -2344,6 +2436,104 @@ async function mapClick(lat, lng) {
   if (map.hasLayer(pop)) pop.setContent(spotPopup(clickSpot, dateStr, wxLine(q) || '<p class="hint">Live pressure and swell load on the live site.</p>'));
 }
 
+/* ---------- Fish photos (Wikipedia) ---------- */
+const FISH_SVG = '<svg viewBox="0 0 64 40" aria-hidden="true"><path d="M4 20c8-12 26-16 40-8l12-8-3 16 3 16-12-8C30 36 12 32 4 20z" fill="var(--accent)" opacity=".35"/><circle cx="16" cy="18" r="2.2" fill="var(--ink)"/></svg>';
+const PH = store.get('solunar-photos') || {};
+const phBusy = {};
+const photoTitle = sp => sp.wiki || (sp.latin.endsWith(' spp.') ? sp.latin.split(' ')[0] : sp.latin);
+function loadPhoto(sp) {
+  if (sp.id in PH || phBusy[sp.id]) return;
+  phBusy[sp.id] = true;
+  fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(photoTitle(sp).replace(/ /g, '_')))
+    .then(r => r.ok ? r.json() : null)
+    .then(j => {
+      PH[sp.id] = j && j.thumbnail ? { src: j.thumbnail.source, page: (j.content_urls && j.content_urls.desktop && j.content_urls.desktop.page) || '' } : null;
+      store.set('solunar-photos', PH);
+      fillPhotos();
+    })
+    .catch(() => {});
+}
+function fillPhotos(root) {
+  (root || document).querySelectorAll('[data-ph]').forEach(el => {
+    const sp = SPECIES.find(s => s.id === el.dataset.ph);
+    if (!sp) return;
+    const p = PH[sp.id];
+    if (p && p.src) {
+      if (!el.querySelector('img')) el.innerHTML = `<img src="${p.src}" alt="${esc(sp.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`;
+    } else {
+      if (!el.innerHTML) el.innerHTML = FISH_SVG;
+      loadPhoto(sp);
+    }
+  });
+}
+
+/* ---------- Saved pins with notes ---------- */
+state.pins = Array.isArray(saved.pins) ? saved.pins : [];
+const pinFor = l => state.pins.find(p => Math.abs(p.lat - l.lat) < 0.02 && Math.abs(p.lng - l.lng) < 0.02);
+function savePins() { const cur = store.get('solunar-v4') || {}; cur.pins = state.pins; store.set('solunar-v4', cur); }
+
+/* ---------- Today's verdict ---------- */
+const VERDICT = s => s >= 75 ? 'Get out there' : s >= 55 ? 'Worth a go' : s >= 35 ? 'Pick your window' : 'Tough day';
+function gauge(score, cls) {
+  const R = 46, C = 2 * Math.PI * R, f = clamp(score, 0, 100) / 100;
+  return `<svg viewBox="0 0 120 120" class="gauge" role="img" aria-label="Best rating ${score} out of 100">
+    <circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--line)" stroke-width="10"/>
+    <circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--${cls})" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(C * f).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 60 60)"/>
+    <text x="60" y="66" text-anchor="middle" font-family="var(--f-display)" font-size="34" font-weight="700" fill="var(--ink)">${score}</text>
+    <text x="60" y="84" text-anchor="middle" font-size="10" fill="var(--muted)" letter-spacing="1">OUT OF 100</text></svg>`;
+}
+function weekendDate(tz) {
+  const t = todayIn(tz), dow = new Date(t + 'T12:00:00Z').getUTCDay();
+  return dow === 6 || dow === 0 ? t : addDays(t, 6 - dow);
+}
+function drawHero(l, day, days, list, weekScores, shown, wx, dateStr) {
+  const el = $('hero');
+  const when = new Date(day.start + 12 * 3600e3).toLocaleDateString('en-GB', { timeZone: l.tz, weekday: 'long', day: 'numeric', month: 'long' });
+  const pin = pinFor(l);
+  if (!list.length) {
+    el.innerHTML = `<div class="hero-main"><div><div class="eyebrow">${esc(l.name)} · ${when}</div><div class="verdict">No guide species here yet</div><p class="hero-line">Scroll down to see every fish recorded near this spot.</p></div></div>`;
+    return;
+  }
+  const top = list[0], [lbl, cls] = ratingOf(top.r.score), w = top.r.topW;
+  // best day this week across species
+  let bd = { s: -1 };
+  days.forEach((d, j) => shown.forEach((sp, i) => { if (weekScores[i][j] > bd.s) bd = { s: weekScores[i][j], d, sp }; }));
+  const now = Date.now(), ref = now >= day.start && now < day.end ? now : day.start + 12 * 3600e3;
+  const p = wx && wx.pressAt(ref), sw = wx && wx.swellAt(ref);
+  const kind = top.sp.hab === 'fresh' || (top.sp.hab === 'both' && state.hab !== 'salt') ? 'fresh' : 'sea';
+  const chips = [
+    `<span class="hchip"><b>Moon</b> ${phaseInfo(day.illum.phase)} · ${Math.round(day.illum.fraction * 100)}%</span>`,
+    `<span class="hchip"><b>Barometer</b> ${p ? `${Math.round(p.hpa)} hPa · ${TREND[p.trend].toLowerCase()}` : 'live on the site'}</span>`,
+    sw ? `<span class="hchip"><b>Swell</b> ${sw.h.toFixed(1)} m${sw.per ? ' @ ' + Math.round(sw.per) + ' s' : ''}</span>` : '',
+    `<span class="hchip"><b>Water</b> ${top.r.tEst ? '~' : ''}${fmtT(top.r.tVal)}</span>`,
+    bd.d && bd.d.dateStr !== dateStr ? `<button type="button" class="hchip hbtn" data-date="${bd.d.dateStr}"><b>Best day this week</b> ${dayLabel(bd.d.start + 12 * 3600e3, l.tz)} · ${esc(bd.sp.name.split(' (')[0])} ${bd.s}</button>` : `<span class="hchip"><b>Best day this week</b> this one</span>`
+  ].join('');
+  const today = todayIn(l.tz), tomorrow = addDays(today, 1), wkd = weekendDate(l.tz);
+  const q = (d, t) => `<button type="button" class="qd" data-date="${d}" aria-pressed="${d === dateStr}">${t}</button>`;
+  el.innerHTML = `
+    <div class="hero-main">
+      <div class="hero-photo" data-ph="${top.sp.id}"></div>
+      <div class="hero-text">
+        <div class="eyebrow">${esc(l.name)} · ${when}</div>
+        <div class="verdict r-${cls}">${VERDICT(top.r.score)}</div>
+        <p class="hero-line">Best bet is <b>${esc(top.sp.name.split(' (')[0].toLowerCase())}</b>${w ? `. Be on the water <b class="mono">${fmtTime(w.from, l.tz)}–${fmtTime(w.to, l.tz)}</b>` : ''}.</p>
+        <div class="quick" role="group" aria-label="Jump to a day">${q(today, 'Today')}${q(tomorrow, 'Tomorrow')}${wkd !== today && wkd !== tomorrow ? q(wkd, 'This weekend') : ''}</div>
+      </div>
+      ${gauge(top.r.score, cls)}
+    </div>
+    <div class="hero-top">${list.slice(0, 3).map(({ sp, r }) => { const [l2, c2] = ratingOf(r.score); return `
+      <button type="button" class="pick" data-pick="${sp.id}">
+        <span class="pick-ph" data-ph="${sp.id}"></span>
+        <span class="pick-t"><b>${esc(sp.name.split(' (')[0])}</b><small class="mono">${r.topW ? 'Go ' + fmtTime(r.topW.from, l.tz) : ''}</small></span>
+        <span class="pick-s r-${c2}">${r.score}</span>
+      </button>`; }).join('')}</div>
+    <div class="hero-cond">${chips}</div>
+    ${pin && pin.note ? `<p class="hero-note"><b>Your note:</b> ${esc(pin.note)}</p>` : ''}`;
+  el.querySelectorAll('[data-date]').forEach(b => b.addEventListener('click', () => { $('date').value = b.dataset.date; render(); }));
+  el.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => { state.focus = b.dataset.pick; render(); $('goTitle').scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
+  fillPhotos(el);
+}
+
 /* ---------- Events ---------- */
 const shiftDate = n => { $('date').value = addDays($('date').value || todayIn(loc().tz), n); render(); };
 $('prevDay').addEventListener('click', () => shiftDate(-1));
@@ -2359,7 +2549,7 @@ document.querySelectorAll('#unitSeg button').forEach(b => b.addEventListener('cl
 function render() {
   const l = loc(), dateStr = $('date').value || todayIn(l.tz);
   const geo = $('geo').value;
-  store.set('solunar-v4', { spot: $('preset').value, geo, hab: state.hab, unit: state.unit, customs: state.customs });
+  store.set('solunar-v4', { spot: $('preset').value, geo, hab: state.hab, unit: state.unit, customs: state.customs, pins: state.pins });
   loadWx(l);
   const wx = makeWx(l);
   loadGbif(l);
@@ -2375,6 +2565,8 @@ function render() {
   $('focus').innerHTML = list.map(({ sp, r }) => `<option value="${sp.id}">${esc(sp.name)} · ${r.score}</option>`).join('');
   if (state.focus) $('focus').value = state.focus;
   const f = list.find(x => x.sp.id === state.focus);
+  const weekScores = shown.map(sp => days.map(dd => scoreSpecies(sp, dd, wx, geo, state.hab).score));
+  drawHero(l, day, days, list, weekScores, shown, wx, dateStr);
   drawGo(day, l, f && f.sp, f && f.r);
   drawConditions(l, day, days, wx, shown.length ? shown : here);
 
@@ -2408,9 +2600,10 @@ function render() {
     const sChip = r.swf ? `<span class="chip${r.swf.f < 0.9 ? ' warn' : ''}">Swell ${r.swf.h.toFixed(1)} m: ${r.swf.note}</span>` : '';
     const gChip = r.gf ? `<span class="chip${r.gf.v < 0.4 ? ' warn' : ''}">${GEO_NAME[geo].split(' or ')[0]}: ${r.gf.note}</span>`
       : `<span class="chip warn">Look for: ${bestGeo(sp).join(', ')}</span>`;
-    return `<article class="card">
+    return `<article class="card" data-card="${sp.id}" tabindex="0" aria-label="${esc(sp.name)}, rating ${r.score}. Open when to go">
       <div class="card-head">
-        <div><h3>${sp.name}</h3><div class="latin">${sp.latin}</div></div>
+        <div class="fishpic" data-ph="${sp.id}"></div>
+        <div><h3>${sp.name}</h3><div class="latin">${sp.latin}</div>${PH[sp.id] && PH[sp.id].page ? `<a class="credit" href="${PH[sp.id].page}" target="_blank" rel="noopener">Photo: Wikipedia</a>` : ''}</div>
         <div class="score r-${cls}"><div class="num">${r.score}</div><span class="pill">${lbl}</span></div>
       </div>
       <div><div class="eyebrow" style="margin-bottom:4px">Best windows</div><div class="windows">${wins}</div></div>
@@ -2420,16 +2613,18 @@ function render() {
       <details><summary>How to fish it</summary><ul>${sp.tips.map(t => `<li>${t}</li>`).join('')}<li>Comfort range ${sp.temp[1]}–${sp.temp[2]} °C (${Math.round(sp.temp[1] * 9 / 5 + 32)}–${Math.round(sp.temp[2] * 9 / 5 + 32)} °F)</li>${sp.swell ? `<li>Likes ${sp.swell[0]}–${sp.swell[1]} m of swell where it's exposed</li>` : ''}</ul></details>
     </article>`;
   }).join('') || `<p class="empty">${here.length ? 'None of the species here match this filter. Try All.' : 'None of the species in the guide are found here yet. Tell Claude which fish you catch here and they can be added.'}</p>`;
-  $('species').querySelectorAll('[data-focus]').forEach(b => b.addEventListener('click', () => {
-    state.focus = b.dataset.focus; render(); $('goTitle').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }));
+  $('species').querySelectorAll('[data-card]').forEach(c => {
+    const go = () => { state.focus = c.dataset.card; render(); $('goTitle').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    c.addEventListener('click', e => { if (!e.target.closest('details, a')) go(); });
+    c.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target === c) go(); });
+  });
+  fillPhotos($('species'));
   drawOthers(l, day, wx, geo, state.hab);
   drawMap(l, dateStr);
 
   // Week
   const cellColor = s => `color-mix(in srgb, var(--${ratingOf(s)[1]}) ${Math.round(18 + s * 0.45)}%, transparent)`;
   const head = days.map(dd => `<th class="${dd.dateStr === dateStr ? 'sel' : ''}"><button type="button" data-date="${dd.dateStr}">${dayLabel(dd.start + 12 * 3600e3, l.tz)}</button></th>`).join('');
-  const weekScores = shown.map(sp => days.map(dd => scoreSpecies(sp, dd, wx, geo, state.hab).score));
   const bestRow = shown.length ? `<tr class="bestrow"><td><b>Best bet</b></td>${days.map((dd, j) => { let bi = 0; weekScores.forEach((r, i) => { if (r[j] > weekScores[bi][j]) bi = i; }); return `<td>${shown[bi].name.split(' (')[0]}</td>`; }).join('')}</tr>` : '';
   const rows = shown.map((sp, si) => `<tr><td>${sp.name}</td>${days.map((dd, j) => { const s = weekScores[si][j]; return `<td><span class="cell" style="background:${cellColor(s)}">${s}</span></td>`; }).join('')}</tr>`).join('');
   const moonRow = `<tr class="moonrow"><td>Moon</td>${days.map(dd => `<td>${phaseInfo(dd.illum.phase).replace(' moon', '')}<br>${'●'.repeat(dd.dayStars)}${'○'.repeat(4 - dd.dayStars)}</td>`).join('')}</tr>`;
